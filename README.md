@@ -1,19 +1,3 @@
-# the-game-to-fix-our-world
-An open-source, collaborative mission to redesign our digital and physical world through creative tools, stewardship, and visual innovation
-
-
-Repository name:
-the-game-to-fix-our-world
-
-[x] README
-
-[ ] .gitignore (optional: Python or general)
-
-[ ] License (recommended: MIT, AGPL, or Creative Commons depending on your goals)
-
-
-README.md 
-
 # The Game to Fix Our World
 
 **The Game to Fix Our World** is an open-source project that invites people to become co-creators in restoring, rebuilding, and reimagining the systems that shape our lives—both digital and physical.
@@ -74,6 +58,3 @@ This project is licensed under the **MIT License**. See [`LICENSE`](./LICENSE) f
 ## Say It With Us
 
 > “Let’s play the game to fix our world.”
-
-
----
