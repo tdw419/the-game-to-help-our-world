@@ -2,8 +2,18 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from encoder import encode_file_to_image
 from decoder import decode_image_to_file
+from metadata import generate_metadata, save_metadata
 import subprocess
 import os
+import csv
+import time
+
+LOG_FILE = "pixel_vault_log.csv"
+
+def log_action(action, file):
+    with open(LOG_FILE, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([time.ctime(), action, file])
 
 def encode_action():
     file_path = filedialog.askopenfilename(title="Select File to Backup")
@@ -18,6 +28,9 @@ def encode_action():
 
     try:
         encode_file_to_image(file_path, output_path, compress=True)
+        metadata = generate_metadata(file_path)
+        save_metadata(metadata, output_path)
+        log_action("Backup", file_path)
         messagebox.showinfo("Success", f"Backup saved to {output_path}")
     except Exception as e:
         messagebox.showerror("Error", str(e))
@@ -34,6 +47,7 @@ def decode_action():
 
     try:
         decode_image_to_file(image_path, output_path, decompress=True)
+        log_action("Restore", output_path)
         messagebox.showinfo("Success", f"File restored to {output_path}")
     except Exception as e:
         messagebox.showerror("Error", str(e))
@@ -59,6 +73,9 @@ def batch_backup():
             if os.path.isfile(src_path):
                 output_path = os.path.join(output_folder, filename + ".png")
                 encode_file_to_image(src_path, output_path, compress=True)
+                metadata = generate_metadata(src_path)
+                save_metadata(metadata, output_path)
+                log_action("Batch Backup", src_path)
         messagebox.showinfo("Success", "Batch backup complete.")
     except Exception as e:
         messagebox.showerror("Error", str(e))
