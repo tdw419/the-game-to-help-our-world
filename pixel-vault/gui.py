@@ -47,4 +47,7 @@ label.pack(pady=20)
 encode_btn = tk.Button(root, text="Backup File to Image", command=encode_action, width=30)
 encode_btn.pack(pady=10)
 
-decode_btn = tk.Button(root, text="Restore File from Ima_
+decode_btn = tk.Button(root, text="Restore File from Image", command=decode_action, width=30)
+decode_btn.pack(pady=10)
+
+root.mainloop()
