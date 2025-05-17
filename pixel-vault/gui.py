@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from encoder import encode_file_to_image
 from decoder import decode_image_to_file
+import subprocess
+import os
 
 def encode_action():
     file_path = filedialog.askopenfilename(title="Select File to Backup")
@@ -36,18 +38,30 @@ def decode_action():
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
+def open_folder_sync():
+    subprocess.Popen(["python", "folder_sync_gui.py"])
+
+def open_benchmark_tool():
+    subprocess.Popen(["python", "backup_benchmark.py"])
+
 # GUI setup
 root = tk.Tk()
 root.title("Pixel Vault Backup Utility")
-root.geometry("400x200")
+root.geometry("400x300")
 
 label = tk.Label(root, text="Pixel Vault", font=("Arial", 16))
 label.pack(pady=20)
 
 encode_btn = tk.Button(root, text="Backup File to Image", command=encode_action, width=30)
-encode_btn.pack(pady=10)
+encode_btn.pack(pady=5)
 
 decode_btn = tk.Button(root, text="Restore File from Image", command=decode_action, width=30)
-decode_btn.pack(pady=10)
+decode_btn.pack(pady=5)
+
+sync_btn = tk.Button(root, text="Folder Sync Tool", command=open_folder_sync, width=30)
+sync_btn.pack(pady=5)
+
+benchmark_btn = tk.Button(root, text="Run Backup Benchmark", command=open_benchmark_tool, width=30)
+benchmark_btn.pack(pady=5)
 
 root.mainloop()
