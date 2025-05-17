@@ -44,10 +44,38 @@ def open_folder_sync():
 def open_benchmark_tool():
     subprocess.Popen(["python", "backup_benchmark.py"])
 
+def batch_backup():
+    folder_path = filedialog.askdirectory(title="Select Folder to Backup")
+    if not folder_path:
+        return
+
+    output_folder = filedialog.askdirectory(title="Select Output Folder for Backups")
+    if not output_folder:
+        return
+
+    try:
+        for filename in os.listdir(folder_path):
+            src_path = os.path.join(folder_path, filename)
+            if os.path.isfile(src_path):
+                output_path = os.path.join(output_folder, filename + ".png")
+                encode_file_to_image(src_path, output_path, compress=True)
+        messagebox.showinfo("Success", "Batch backup complete.")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+
+def open_batch_restore():
+    subprocess.Popen(["python", "restore_batch.py"])
+
+def open_log_viewer():
+    subprocess.Popen(["python", "log_viewer.py"])
+
+def open_packager():
+    subprocess.Popen(["python", "packager.py"])
+
 # GUI setup
 root = tk.Tk()
 root.title("Pixel Vault Backup Utility")
-root.geometry("400x300")
+root.geometry("400x450")
 
 label = tk.Label(root, text="Pixel Vault", font=("Arial", 16))
 label.pack(pady=20)
@@ -58,10 +86,22 @@ encode_btn.pack(pady=5)
 decode_btn = tk.Button(root, text="Restore File from Image", command=decode_action, width=30)
 decode_btn.pack(pady=5)
 
+batch_btn = tk.Button(root, text="Batch Backup Folder", command=batch_backup, width=30)
+batch_btn.pack(pady=5)
+
+restore_btn = tk.Button(root, text="Batch Restore Folder", command=open_batch_restore, width=30)
+restore_btn.pack(pady=5)
+
 sync_btn = tk.Button(root, text="Folder Sync Tool", command=open_folder_sync, width=30)
 sync_btn.pack(pady=5)
 
 benchmark_btn = tk.Button(root, text="Run Backup Benchmark", command=open_benchmark_tool, width=30)
 benchmark_btn.pack(pady=5)
+
+log_btn = tk.Button(root, text="View Backup Log", command=open_log_viewer, width=30)
+log_btn.pack(pady=5)
+
+packager_btn = tk.Button(root, text="Build EXE Package", command=open_packager, width=30)
+packager_btn.pack(pady=5)
 
 root.mainloop()
