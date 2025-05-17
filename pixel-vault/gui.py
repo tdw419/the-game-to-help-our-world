@@ -1,30 +1,50 @@
-from PIL import Image
-import zlib
-import math
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from encoder import encode_file_to_image
+from decoder import decode_image_to_file
 
-def encode_file_to_image(input_path, output_image_path, compress=True):
-    with open(input_path, 'rb') as f:
-        data = f.read()
+def encode_action():
+    file_path = filedialog.askopenfilename(title="Select File to Backup")
+    if not file_path:
+        return
 
-    if compress:
-        data = zlib.compress(data)
+    output_path = filedialog.asksaveasfilename(defaultextension=".png",
+                                               filetypes=[("PNG Image", "*.png")],
+                                               title="Save Backup Image As")
+    if not output_path:
+        return
 
-    # Pad to ensure 3-byte alignment
-    padding = (3 - len(data) % 3) % 3
-    data += b'\x00' * padding
+    try:
+        encode_file_to_image(file_path, output_path, compress=True)
+        messagebox.showinfo("Success", f"Backup saved to {output_path}")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
 
-    # Convert bytes to pixels
-    pixels = [tuple(data[i:i+3]) for i in range(0, len(data), 3)]
+def decode_action():
+    image_path = filedialog.askopenfilename(title="Select Backup Image",
+                                            filetypes=[("PNG Image", "*.png")])
+    if not image_path:
+        return
 
-    # Determine image size (square or near-square)
-    size = math.ceil(len(pixels) ** 0.5)
-    image = Image.new('RGB', (size, size), color=(0, 0, 0))
+    output_path = filedialog.asksaveasfilename(title="Restore File As")
+    if not output_path:
+        return
 
-    for i, pixel in enumerate(pixels):
-        x = i % size
-        y = i // size
-        if y < size:
-            image.putpixel((x, y), pixel)
+    try:
+        decode_image_to_file(image_path, output_path, decompress=True)
+        messagebox.showinfo("Success", f"File restored to {output_path}")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
 
-    image.save(output_image_path)
-    print(f"Saved image backup to {output_image_path}")
+# GUI setup
+root = tk.Tk()
+root.title("Pixel Vault Backup Utility")
+root.geometry("400x200")
+
+label = tk.Label(root, text="Pixel Vault", font=("Arial", 16))
+label.pack(pady=20)
+
+encode_btn = tk.Button(root, text="Backup File to Image", command=encode_action, width=30)
+encode_btn.pack(pady=10)
+
+decode_btn = tk.Button(root, text="Restore File from Ima_
