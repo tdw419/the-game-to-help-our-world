@@ -1,23 +1,23 @@
-pixel-vault/main.py
+from PIL import Image
+import zlib
 
-from encoder import encode_file_to_image from decoder import decode_image_to_file import sys import os
+def decode_image_to_file(input_image_path, output_file_path, decompress=True):
+    image = Image.open(input_image_path)
+    pixels = list(image.getdata())
 
-def main(): if len(sys.argv) < 3: print("Usage:") print("  Encode: python main.py encode <input_file> <output_image>") print("  Decode: python main.py decode <input_image> <output_file>") return
+    # Flatten pixel tuples into a byte array
+    raw_data = bytearray()
+    for r, g, b in pixels:
+        raw_data.extend([r, g, b])
 
-command = sys.argv[1]
+    if decompress:
+        try:
+            raw_data = zlib.decompress(raw_data)
+        except zlib.error as e:
+            print("Error decompressing data:", e)
+            return
 
-if command == "encode":
-    input_file = sys.argv[2]
-    output_image = sys.argv[3]
-    encode_file_to_image(input_file, output_image)
+    with open(output_file_path, 'wb') as f:
+        f.write(raw_data)
 
-elif command == "decode":
-    input_image = sys.argv[2]
-    output_file = sys.argv[3]
-    decode_image_to_file(input_image, output_file)
-
-else:
-    print("Invalid command. Use 'encode' or 'decode'.")
-
-if name == "main": main()
-
+    print(f"Restored file to {output_file_path}")
