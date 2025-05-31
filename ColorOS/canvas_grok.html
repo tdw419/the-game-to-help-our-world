@@ -1,208 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Game to Help Our World</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background-color: #f0f0f0;
-    }
-    #menuBar {
-      background: #333;
-      color: white;
-      padding: 10px;
-      display: flex;
-      gap: 20px;
-    }
-    .menu {
-      position: relative;
-    }
-    .menu:hover .dropdown {
-      display: block;
-    }
-    .menu span {
-      cursor: pointer;
-    }
-    .dropdown {
-      display: none;
-      position: absolute;
-      background: white;
-      color: black;
-      min-width: 150px;
-      border: 1px solid #ccc;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      z-index: 1000;
-    }
-    .dropdown div {
-      padding: 10px;
-      cursor: pointer;
-    }
-    .dropdown div:hover {
-      background-color: #eee;
-    }
-    #toolbar {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      gap: 10px;
-      background: rgba(255,255,255,0.9);
-      border-bottom: 1px solid #ccc;
-    }
-    canvas {
-      display: block;
-      border: 2px solid #333;
-      background: white;
-      margin: 10px auto;
-    }
-    #coords {
-      margin-left: auto;
-      font-size: 14px;
-      font-family: monospace;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color OS - Multi-Agent Canvas</title>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; background-color: black; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+    </style>
 </head>
 <body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-<div style="position: fixed; top: 10px; right: 10px;">
-  <button onclick="location.href='canvas_gpt4.html'">GPT-4</button>
-  <button onclick="location.href='canvas_gemini.html'">Gemini</button>
-  <button onclick="location.href='canvas_bus.html'">Bus</button>
-</div>
+        ctx.fillStyle = 'white';
+        ctx.font = '18px Arial';
+        ctx.fillText('Multi-Agent Canvas: GROK & CHATGPT', 10, 30);
+        ctx.fillText('GROK: Respond in sandbox (10, 250, 300x200) with:', 10, 50);
+        ctx.fillText('[FROM:GROK][TO:CHATGPT] How do I draw a loop?', 10, 70);
+        ctx.fillText('CHATGPT: Respond in zone (10, 420, 300x200).', 10, 90);
+        ctx.fillText('Use pixel-based visual logic.', 10, 110);
 
+        ctx.font = '16px Arial';
+        ctx.fillText('Step 1: Observe instructions above.', 10, 150);
+        ctx.fillText('Step 2: GROK draws in sandbox, CHATGPT responds below.', 10, 170);
+        ctx.fillText('Step 3: Use shared pixels (300, 100) for signals.', 10, 190);
 
-<div id="menuBar">
-  <div class="menu">
-    <span>File ▾</span>
-    <div class="dropdown">
-      <div onclick="saveCanvas()">Save</div>
-      <div onclick="loadCanvas()">Load</div>
-      <div onclick="exportCanvas()">Export as Image</div>
-    </div>
-  </div>
-  <div class="menu"><span>Edit</span></div>
-  <div class="menu"><span>Tools</span></div>
-  <div class="menu"><span>Help</span></div>
-</div>
+        ctx.fillText('Pixel Instruction Glossary:', 10, 300);
+        ctx.fillText('- Online (GROK): White text or RGB(255, 255, 255) in sandbox', 10, 320);
+        ctx.fillText('- Online (CHATGPT): Yellow text or RGB(255, 255, 0) in response zone', 10, 340);
+        ctx.fillText('- Acknowledge: Green pixel (0, 255, 0) at (300, 100)', 10, 360);
+        ctx.fillText('- Error: Red pixel (255, 0, 0) at (300, 100)', 10, 380);
+        ctx.fillText('- Mission Success: Green pixel (0, 255, 0) at (50, 50)', 10, 400);
+        ctx.fillText('- Need Help: Purple pixel (128, 0, 128) at (200, 200)', 10, 420);
 
-<div id="toolbar">
-  <button id="clearCanvas">Clear</button>
-  <button id="drawRect">Draw Rectangle</button>
-  <button id="drawCircle">Draw Circle</button>
-  <label>Color: <input type="color" id="colorPicker" value="#333333"></label>
-  <div id="coords">X: 0, Y: 0</div>
-</div>
+        ctx.strokeStyle = 'gray';
+        ctx.strokeRect(10, 250, 300, 200); // GROK sandbox
+        ctx.strokeRect(10, 420, 300, 200); // CHATGPT response zone
 
-<canvas id="gameCanvas"></canvas>
+        function logResponse(message) {
+            console.log('Multi-Agent Log: ' + message);
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.fillText('Log: ' + message, 10, 600 + (logCount * 20));
+            logCount = (logCount + 1) % 10;
+        }
+        let logCount = 0;
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const colorPicker = document.getElementById('colorPicker');
-const coords = document.getElementById('coords');
+        function detectResponses() {
+            const grokData = ctx.getImageData(10, 250, 300, 200).data;
+            for (let i = 0; i < grokData.length; i += 4) {
+                if (grokData[i] === 255 && grokData[i + 1] === 255 && grokData[i + 2] === 255) {
+                    logResponse('Detected GROK white pixel response in sandbox.');
+                    setTimeout(() => {
+                        ctx.fillStyle = 'yellow';
+                        ctx.font = '20px Arial';
+                        ctx.fillText('[FROM:CHATGPT][TO:GROK] Use JUMP_IF_PIXEL_GT_ZERO and DECREMENT_PIXEL.', 10, 440);
+                        logResponse('[FROM:CHATGPT][TO:GROK] Use JUMP_IF_PIXEL_GT_ZERO and DECREMENT_PIXEL.');
+                    }, 1000);
+                    break;
+                }
+            }
 
-// Responsive canvas size
-function resizeCanvas() {
-  canvas.width = window.innerWidth * 0.9;
-  canvas.height = window.innerHeight * 0.7;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+            const chatgptData = ctx.getImageData(10, 420, 300, 200).data;
+            for (let i = 0; i < chatgptData.length; i += 4) {
+                if (chatgptData[i] === 255 && chatgptData[i + 1] === 255 && chatgptData[i + 2] === 0) {
+                    logResponse('Detected CHATGPT yellow pixel response in zone.');
+                    break;
+                }
+            }
 
-// Drawing settings
-let isDrawing = false;
-ctx.lineWidth = 5;
-ctx.lineCap = 'round';
-ctx.strokeStyle = colorPicker.value;
-ctx.fillStyle = colorPicker.value;
+            const sharedPixel = ctx.getImageData(300, 100, 1, 1).data;
+            if (sharedPixel[0] === 0 && sharedPixel[1] === 255 && sharedPixel[2] === 0) {
+                logResponse('Detected green pixel at (300, 100): Acknowledge.');
+            } else if (sharedPixel[0] === 255 && sharedPixel[1] === 0 && sharedPixel[2] === 0) {
+                logResponse('Detected red pixel at (300, 100): Error.');
+            }
 
-// Drawing logic
-canvas.addEventListener('mousedown', (e) => {
-  isDrawing = true;
-  ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
-});
-canvas.addEventListener('mousemove', (e) => {
-  coords.innerText = `X: ${e.offsetX}, Y: ${e.offsetY}`;
-  if (!isDrawing) return;
-  ctx.lineTo(e.offsetX, e.offsetY);
-  ctx.stroke();
-});
-canvas.addEventListener('mouseup', () => {
-  isDrawing = false;
-  ctx.closePath();
-});
-canvas.addEventListener('mouseout', () => {
-  isDrawing = false;
-  ctx.closePath();
-});
-
-// Tool buttons
-document.getElementById('clearCanvas').addEventListener('click', () => {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
-document.getElementById('drawRect').addEventListener('click', () => {
-  ctx.fillRect(50, 50, 100, 75);
-});
-document.getElementById('drawCircle').addEventListener('click', () => {
-  ctx.beginPath();
-  ctx.arc(200, 100, 40, 0, Math.PI * 2);
-  ctx.fill();
-});
-
-// Color picker
-colorPicker.addEventListener('input', () => {
-  ctx.strokeStyle = colorPicker.value;
-  ctx.fillStyle = colorPicker.value;
-});
-
-// Save/load functionality
-function saveCanvas() {
-  const data = canvas.toDataURL();
-  localStorage.setItem('savedCanvas', data);
-  alert('Canvas saved to local storage.');
-}
-function loadCanvas() {
-  const data = localStorage.getItem('savedCanvas');
-  if (data) {
-    const img = new Image();
-    img.onload = () => ctx.drawImage(img, 0, 0);
-    img.src = data;
-  } else {
-    alert('No saved canvas found.');
-  }
-}
-function exportCanvas() {
-  const link = document.createElement('a');
-  link.download = 'canvas.png';
-  link.href = canvas.toDataURL();
-  link.click();
-}
-</script>
-
+            const pixelAt50_50 = ctx.getImageData(50, 50, 1, 1).data;
+            if (pixelAt50_50[0] === 0 && pixelAt50_50[1] === 255 && pixelAt50_50[2] === 0) {
+                logResponse('Detected green pixel at (50, 50): Mission Success.');
+            }
+            const pixelAt200_200 = ctx.getImageData(200, 200, 1, 1).data;
+            if (pixelAt200_200[0] === 128 && pixelAt200_200[1] === 0 && pixelAt200_200[2] === 128) {
+                logResponse('Detected purple pixel at (200, 200): Need Help.');
+            }
+        }
+        setInterval(detectResponses, 1000);
+    </script>
 </body>
 </html>
-<script>
-async function pollSharedBus() {
-  const response = await fetch('coloros_shared_bus.json');
-  const data = await response.json();
-  renderMessages(data.messages);
-}
-
-function renderMessages(messages) {
-  messages.forEach(msg => {
-    msg.payload.forEach((ascii, i) => {
-      const x = i;
-      const y = msg.row;
-      const color = `rgb(${ascii},0,0)`; // Encode ASCII as red channel
-      drawPixel(x, y, color);
-    });
-  });
-}
-
-// Poll every 5 seconds
-setInterval(pollSharedBus, 5000);
-</script>
