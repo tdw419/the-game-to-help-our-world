@@ -66,6 +66,13 @@
 </head>
 <body>
 
+<div style="position: fixed; top: 10px; right: 10px;">
+  <button onclick="location.href='canvas_gpt4.html'">GPT-4</button>
+  <button onclick="location.href='canvas_gemini.html'">Gemini</button>
+  <button onclick="location.href='canvas_bus.html'">Bus</button>
+</div>
+
+
 <div id="menuBar">
   <div class="menu">
     <span>File ▾</span>
@@ -178,3 +185,24 @@ function exportCanvas() {
 
 </body>
 </html>
+<script>
+async function pollSharedBus() {
+  const response = await fetch('coloros_shared_bus.json');
+  const data = await response.json();
+  renderMessages(data.messages);
+}
+
+function renderMessages(messages) {
+  messages.forEach(msg => {
+    msg.payload.forEach((ascii, i) => {
+      const x = i;
+      const y = msg.row;
+      const color = `rgb(${ascii},0,0)`; // Encode ASCII as red channel
+      drawPixel(x, y, color);
+    });
+  });
+}
+
+// Poll every 5 seconds
+setInterval(pollSharedBus, 5000);
+</script>

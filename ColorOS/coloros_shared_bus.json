@@ -1,0 +1,18 @@
+{
+  "messages": [
+    {
+      "sender": "G",
+      "receiver": "X",
+      "type": "HANDSHAKE",
+      "row": 30,
+      "payload": [71, 88, 0, 72, 69, 76, 76, 79, 33]
+    },
+    {
+      "sender": "X",
+      "receiver": "G",
+      "type": "RESPONSE",
+      "row": 31,
+      "payload": [82, 69, 65, 68, 89, 33]
+    }
+  ]
+}
