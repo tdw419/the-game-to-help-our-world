@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ColorOS World Map</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    canvas { display: block; }
+    #debug {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: lime;
+      background: rgba(0,0,0,0.5);
+      padding: 4px 8px;
+      font-family: monospace;
+      font-size: 14px;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="mainCanvas" width="800" height="600"></canvas>
+<div id="debug">Loading...</div>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const debug = document.getElementById('debug');
+
+// Settings
+const WORLD_SIZE = 25000;
+const VIEW_WIDTH = canvas.width;
+const VIEW_HEIGHT = canvas.height;
+
+// World canvas (off-screen)
+const worldCanvas = document.createElement('canvas');
+worldCanvas.width = WORLD_SIZE;
+worldCanvas.height = WORLD_SIZE;
+const worldCtx = worldCanvas.getContext('2d');
+
+// Viewport state
+let viewportX = WORLD_SIZE / 2 - VIEW_WIDTH / 2;
+let viewportY = WORLD_SIZE / 2 - VIEW_HEIGHT / 2;
+let zoom = 1.0;
+
+// Draw current view
+function draw() {
+  ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+  ctx.drawImage(
+    worldCanvas,
+    viewportX, viewportY, VIEW_WIDTH / zoom, VIEW_HEIGHT / zoom,
+    0, 0, VIEW_WIDTH, VIEW_HEIGHT
+  );
+
+  debug.innerText = `View: (${Math.floor(viewportX)}, ${Math.floor(viewportY)}) | Zoom: ${zoom.toFixed(2)}`;
+}
+
+// Pan with arrow keys
+document.addEventListener('keydown', (e) => {
+  const panSpeed = 100 / zoom;
+  if (e.key === 'ArrowUp') viewportY -= panSpeed;
+  if (e.key === 'ArrowDown') viewportY += panSpeed;
+  if (e.key === 'ArrowLeft') viewportX -= panSpeed;
+  if (e.key === 'ArrowRight') viewportX += panSpeed;
+  draw();
+});
+
+// Zoom with mouse wheel
+canvas.addEventListener('wheel', (e) => {
+  const zoomFactor = 1.1;
+  if (e.deltaY < 0) zoom *= zoomFactor;
+  else zoom /= zoomFactor;
+  zoom = Math.max(0.1, Math.min(zoom, 10));
+  draw();
+});
+
+// Click to place 1x1 magenta pixel
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  const worldX = Math.floor(viewportX + cx / zoom);
+  const worldY = Math.floor(viewportY + cy / zoom);
+
+  worldCtx.fillStyle = '#FF00FF';
+  worldCtx.fillRect(worldX, worldY, 1, 1);
+
+  draw();
+});
+
+draw();
+</script>
+
+</body>
+</html>

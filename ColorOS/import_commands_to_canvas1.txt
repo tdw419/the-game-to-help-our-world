@@ -1,0 +1,11 @@
+# Paint a magenta pixel at (50, 50)
+SET_COLOR 50 50 255 0 255
+
+# Copy that pixel to (100, 100)
+COPY_PIXEL 50 50 100 100
+
+# Paint a green pixel at (10, 80)
+SET_COLOR 10 80 0 255 0
+
+# End the program
+END
