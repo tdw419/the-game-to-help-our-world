@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Game to Help Our World</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+    }
+    #menuBar {
+      background: #333;
+      color: white;
+      padding: 10px;
+      display: flex;
+      gap: 20px;
+    }
+    .menu {
+      position: relative;
+    }
+    .menu:hover .dropdown {
+      display: block;
+    }
+    .menu span {
+      cursor: pointer;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      background: white;
+      color: black;
+      min-width: 150px;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    .dropdown div {
+      padding: 10px;
+      cursor: pointer;
+    }
+    .dropdown div:hover {
+      background-color: #eee;
+    }
+    #toolbar {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      gap: 10px;
+      background: rgba(255,255,255,0.9);
+      border-bottom: 1px solid #ccc;
+    }
+    canvas {
+      display: block;
+      border: 2px solid #333;
+      background: white;
+      margin: 10px auto;
+    }
+    #coords {
+      margin-left: auto;
+      font-size: 14px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+<div style="position: fixed; top: 10px; right: 10px;">
+  <button onclick="location.href='canvas_gpt4.html'">GPT-4</button>
+  <button onclick="location.href='canvas_gemini.html'">Gemini</button>
+  <button onclick="location.href='canvas_bus.html'">Bus</button>
+</div>
+
+
+<div id="menuBar">
+  <div class="menu">
+    <span>File ▾</span>
+    <div class="dropdown">
+      <div onclick="saveCanvas()">Save</div>
+      <div onclick="loadCanvas()">Load</div>
+      <div onclick="exportCanvas()">Export as Image</div>
+    </div>
+  </div>
+  <div class="menu"><span>Edit</span></div>
+  <div class="menu"><span>Tools</span></div>
+  <div class="menu"><span>Help</span></div>
+</div>
+
+<div id="toolbar">
+  <button id="clearCanvas">Clear</button>
+  <button id="drawRect">Draw Rectangle</button>
+  <button id="drawCircle">Draw Circle</button>
+  <label>Color: <input type="color" id="colorPicker" value="#333333"></label>
+  <div id="coords">X: 0, Y: 0</div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const colorPicker = document.getElementById('colorPicker');
+const coords = document.getElementById('coords');
+
+// Responsive canvas size
+function resizeCanvas() {
+  canvas.width = window.innerWidth * 0.9;
+  canvas.height = window.innerHeight * 0.7;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Drawing settings
+let isDrawing = false;
+ctx.lineWidth = 5;
+ctx.lineCap = 'round';
+ctx.strokeStyle = colorPicker.value;
+ctx.fillStyle = colorPicker.value;
+
+// Drawing logic
+canvas.addEventListener('mousedown', (e) => {
+  isDrawing = true;
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+});
+canvas.addEventListener('mousemove', (e) => {
+  coords.innerText = `X: ${e.offsetX}, Y: ${e.offsetY}`;
+  if (!isDrawing) return;
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+});
+canvas.addEventListener('mouseup', () => {
+  isDrawing = false;
+  ctx.closePath();
+});
+canvas.addEventListener('mouseout', () => {
+  isDrawing = false;
+  ctx.closePath();
+});
+
+// Tool buttons
+document.getElementById('clearCanvas').addEventListener('click', () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+});
+document.getElementById('drawRect').addEventListener('click', () => {
+  ctx.fillRect(50, 50, 100, 75);
+});
+document.getElementById('drawCircle').addEventListener('click', () => {
+  ctx.beginPath();
+  ctx.arc(200, 100, 40, 0, Math.PI * 2);
+  ctx.fill();
+});
+
+// Color picker
+colorPicker.addEventListener('input', () => {
+  ctx.strokeStyle = colorPicker.value;
+  ctx.fillStyle = colorPicker.value;
+});
+
+// Save/load functionality
+function saveCanvas() {
+  const data = canvas.toDataURL();
+  localStorage.setItem('savedCanvas', data);
+  alert('Canvas saved to local storage.');
+}
+function loadCanvas() {
+  const data = localStorage.getItem('savedCanvas');
+  if (data) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = data;
+  } else {
+    alert('No saved canvas found.');
+  }
+}
+function exportCanvas() {
+  const link = document.createElement('a');
+  link.download = 'canvas.png';
+  link.href = canvas.toDataURL();
+  link.click();
+}
+</script>
+
+</body>
+</html>
+<script>
+async function pollSharedBus() {
+  const response = await fetch('coloros_shared_bus.json');
+  const data = await response.json();
+  renderMessages(data.messages);
+}
+
+function renderMessages(messages) {
+  messages.forEach(msg => {
+    msg.payload.forEach((ascii, i) => {
+      const x = i;
+      const y = msg.row;
+      const color = `rgb(${ascii},0,0)`; // Encode ASCII as red channel
+      drawPixel(x, y, color);
+    });
+  });
+}
+
+// Poll every 5 seconds
+setInterval(pollSharedBus, 5000);
+</script>
