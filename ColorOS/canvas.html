@@ -1,129 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Game to Help Our World</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden; /* Prevent scrollbars if canvas is full-screen */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh; /* Ensure body takes full viewport height */
-            background-color: #f0f0f0; /* Light grey background */
-            font-family: sans-serif; /* Basic font */
-        }
-        canvas {
-            border: 2px solid #333; /* Add a subtle border to the canvas */
-            background-color: white; /* Explicitly white background for canvas */
-            display: block; /* Remove extra space below canvas */
-        }
-        .controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 100; /* Ensure controls are on top */
-        }
-        .controls button {
-            margin-right: 5px;
-            padding: 8px 12px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            background-color: #eee;
-            font-size: 14px;
-        }
-        .controls button:hover {
-            background-color: #ddd;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Game to Help Our World</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+    }
+    #menuBar {
+      background: #333;
+      color: white;
+      padding: 10px;
+      display: flex;
+      gap: 20px;
+    }
+    .menu {
+      position: relative;
+    }
+    .menu:hover .dropdown {
+      display: block;
+    }
+    .menu span {
+      cursor: pointer;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      background: white;
+      color: black;
+      min-width: 150px;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      z-index: 1000;
+    }
+    .dropdown div {
+      padding: 10px;
+      cursor: pointer;
+    }
+    .dropdown div:hover {
+      background-color: #eee;
+    }
+    #toolbar {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      gap: 10px;
+      background: rgba(255,255,255,0.9);
+      border-bottom: 1px solid #ccc;
+    }
+    canvas {
+      display: block;
+      border: 2px solid #333;
+      background: white;
+      margin: 10px auto;
+    }
+    #coords {
+      margin-left: auto;
+      font-size: 14px;
+      font-family: monospace;
+    }
+  </style>
 </head>
 <body>
-    <div class="controls">
-        <button id="clearCanvas">Clear</button>
-        <button id="drawRect">Draw Rectangle</button>
-        <button id="drawCircle">Draw Circle</button>
+
+<div id="menuBar">
+  <div class="menu">
+    <span>File ▾</span>
+    <div class="dropdown">
+      <div onclick="saveCanvas()">Save</div>
+      <div onclick="loadCanvas()">Load</div>
+      <div onclick="exportCanvas()">Export as Image</div>
     </div>
-    <canvas id="gameCanvas"></canvas>
+  </div>
+  <div class="menu"><span>Edit</span></div>
+  <div class="menu"><span>Tools</span></div>
+  <div class="menu"><span>Help</span></div>
+</div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+<div id="toolbar">
+  <button id="clearCanvas">Clear</button>
+  <button id="drawRect">Draw Rectangle</button>
+  <button id="drawCircle">Draw Circle</button>
+  <label>Color: <input type="color" id="colorPicker" value="#333333"></label>
+  <div id="coords">X: 0, Y: 0</div>
+</div>
 
-        // Set canvas dimensions (responsive example)
-        function resizeCanvas() {
-            canvas.width = window.innerWidth * 0.8; // 80% of window width
-            canvas.height = window.innerHeight * 0.7; // 70% of window height
-            // Redraw content if necessary after resize
-            // For a simple drawing app, clearing is often sufficient
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas(); // Initial call
+<canvas id="gameCanvas"></canvas>
 
-        let isDrawing = false;
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const colorPicker = document.getElementById('colorPicker');
+const coords = document.getElementById('coords');
 
-        canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
-            ctx.beginPath();
-            ctx.moveTo(e.offsetX, e.offsetY);
-        });
+// Responsive canvas size
+function resizeCanvas() {
+  canvas.width = window.innerWidth * 0.9;
+  canvas.height = window.innerHeight * 0.7;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
-        canvas.addEventListener('mousemove', (e) => {
-            if (!isDrawing) return;
-            ctx.lineTo(e.offsetX, e.offsetY);
-            ctx.stroke();
-        });
+// Drawing settings
+let isDrawing = false;
+ctx.lineWidth = 5;
+ctx.lineCap = 'round';
+ctx.strokeStyle = colorPicker.value;
+ctx.fillStyle = colorPicker.value;
 
-        canvas.addEventListener('mouseup', () => {
-            isDrawing = false;
-            ctx.closePath();
-        });
+// Drawing logic
+canvas.addEventListener('mousedown', (e) => {
+  isDrawing = true;
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX, e.offsetY);
+});
+canvas.addEventListener('mousemove', (e) => {
+  coords.innerText = `X: ${e.offsetX}, Y: ${e.offsetY}`;
+  if (!isDrawing) return;
+  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.stroke();
+});
+canvas.addEventListener('mouseup', () => {
+  isDrawing = false;
+  ctx.closePath();
+});
+canvas.addEventListener('mouseout', () => {
+  isDrawing = false;
+  ctx.closePath();
+});
 
-        canvas.addEventListener('mouseout', () => { // Stop drawing if mouse leaves canvas
-            isDrawing = false;
-            ctx.closePath();
-        });
+// Tool buttons
+document.getElementById('clearCanvas').addEventListener('click', () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+});
+document.getElementById('drawRect').addEventListener('click', () => {
+  ctx.fillRect(50, 50, 100, 75);
+});
+document.getElementById('drawCircle').addEventListener('click', () => {
+  ctx.beginPath();
+  ctx.arc(200, 100, 40, 0, Math.PI * 2);
+  ctx.fill();
+});
 
-        // Basic drawing functionality
-        ctx.lineWidth = 5;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = '#333'; // Default drawing color
+// Color picker
+colorPicker.addEventListener('input', () => {
+  ctx.strokeStyle = colorPicker.value;
+  ctx.fillStyle = colorPicker.value;
+});
 
-        // Control button functionality
-        document.getElementById('clearCanvas').addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
+// Save/load functionality
+function saveCanvas() {
+  const data = canvas.toDataURL();
+  localStorage.setItem('savedCanvas', data);
+  alert('Canvas saved to local storage.');
+}
+function loadCanvas() {
+  const data = localStorage.getItem('savedCanvas');
+  if (data) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = data;
+  } else {
+    alert('No saved canvas found.');
+  }
+}
+function exportCanvas() {
+  const link = document.createElement('a');
+  link.download = 'canvas.png';
+  link.href = canvas.toDataURL();
+  link.click();
+}
+</script>
 
-        document.getElementById('drawRect').addEventListener('click', () => {
-            // Example: draw a fixed rectangle
-            ctx.fillStyle = 'blue';
-            ctx.fillRect(50, 50, 100, 75);
-        });
-
-        document.getElementById('drawCircle').addEventListener('click', () => {
-            // Example: draw a fixed circle
-            ctx.fillStyle = 'red';
-            ctx.beginPath();
-            ctx.arc(200, 100, 40, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // Game Loop (if it's a game)
-        function gameLoop() {
-            // Update game state (e.g., character positions, scores)
-            // ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear for redraw
-            // Draw game elements
-
-            requestAnimationFrame(gameLoop); // Loop continuously
-        }
-        // gameLoop(); // Uncomment to start a game loop
-    </script>
 </body>
 </html>
