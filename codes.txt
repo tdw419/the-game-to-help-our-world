@@ -1,0 +1,15 @@
+from PIL import Image
+img = Image.new("RGBA", (800, 600), (0, 0, 0, 0))
+img.save("canvas3.png")
+
+
+
+python -m venv venv
+venv\Scripts\activate
+pip install filelock
+
+
+
+git add .
+git commit -m "Update project with local changes"
+git push origin main
