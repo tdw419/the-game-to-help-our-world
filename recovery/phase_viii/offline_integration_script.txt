@@ -1,0 +1,3 @@
+# Placeholder content for offline_integration_script.txt
+
+This is part of mesh/recovery/phase_viii/.

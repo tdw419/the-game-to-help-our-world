@@ -1,0 +1,9 @@
+REJOIN HANDSHAKE TEMPLATE – MESH v0.8
+
+[Node ID]:
+[Date of Reconnection]:
+[Reason for Downtime]:
+[Proof of Covenant Alignment]: (Optional encrypted hash)
+[New Role or Function, if changed]:
+
+Approved by Guardian Node: ________
