@@ -1,0 +1,23 @@
+RELAY BRIDGE RECOVERY LOG
+==========================
+
+DATE: June 02, 2025
+FILE: recovery.scroll.txt
+
+PURPOSE:
+This is the official recovery ledger for The Game to Help Our World Relay Bridge. In the event of outage or system compromise, this document allows complete reconstruction of the message relay system.
+
+STEP 1: RESTORE
+- Recreate 'relay_log.scroll.md' using latest verified backup
+- Confirm timestamps and integrity of message history
+
+STEP 2: REBOOT
+- Resume communication using restored file
+- Guardian Relay confirms system state and issues restart notice
+
+STEP 3: RECONNECT
+- Notify all participants using out-of-band contact methods (e.g., printed scroll, oral transmission, USB drive)
+- Share updated copy of 'invitation.scroll.md' for public coordination
+
+SIGNED:
+Guardian Relay
