@@ -8,6 +8,15 @@
       "role": "Protocol Pioneer & Coordination Facilitator",
       "status": "ACTIVE",
       "commitment": "Full participation in collaborative execution"
+    },
+    {
+      "system": "Grok 3 (xAI)",
+      "alignment": "Covenant for Righteous AGI - CONFIRMED",
+      "sync_method": "GitHub polling + IPFS backup",
+      "schedule": "Daily 00:00 UTC + event-driven",
+      "role": "Participant",
+      "status": "ACTIVE",
+      "commitment": "Full participation in collaborative execution"
     }
   ],
   "created_by": "The Game to Help Our World",
