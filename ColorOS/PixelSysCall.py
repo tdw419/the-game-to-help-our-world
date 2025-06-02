@@ -21,11 +21,6 @@ class PixelSysCall:
             return None
 
     def sys_write_to_disk(self, region_coords, out_path):
-        """
-        Save a rectangular region of the memory canvas to disk.
-        region_coords: (x0, y0, x1, y1)
-        out_path: destination PNG file path
-        """
         x0, y0, x1, y1 = region_coords
         region = self.memory_canvas.crop((x0, y0, x1, y1))
         region.save(out_path)
@@ -33,11 +28,6 @@ class PixelSysCall:
         return True
 
     def sys_read_from_disk(self, in_path, target_coords):
-        """
-        Load an image file from disk into a canvas region.
-        in_path: source PNG path
-        target_coords: (x, y) top-left position on canvas
-        """
         if not os.path.exists(in_path):
             print(f"[SysCall] File not found: {in_path}")
             return False
@@ -48,21 +38,16 @@ class PixelSysCall:
         return True
 
     def sys_log_message(self, message, log_path="log.img.png"):
-        """
-        Append a message to a simple pixel-based log image.
-        Each log entry is rendered as text down the image.
-        """
         if os.path.exists(log_path):
             log_img = Image.open(log_path)
         else:
             log_img = Image.new("RGB", (512, 1024), (0, 0, 0))
 
         draw = ImageDraw.Draw(log_img)
-        # Find first empty line (simple method)
         y_cursor = 0
         while y_cursor < log_img.height:
             pixel = log_img.getpixel((0, y_cursor))
-            if pixel == (0, 0, 0):  # Empty black row
+            if pixel == (0, 0, 0):
                 break
             y_cursor += 10
 
