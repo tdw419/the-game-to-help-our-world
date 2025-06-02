@@ -1,0 +1,3 @@
+# Broadcast Queue Map – Phase X
+
+Visual and logical representation of all queued outgoing Mesh signals...

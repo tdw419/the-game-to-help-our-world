@@ -1,0 +1,3 @@
+# QR Backup Index – Phase X
+
+List of all Phase X QR-encoded backups and physical storage notes...
