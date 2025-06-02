@@ -1,0 +1,3 @@
+# Signal Anomaly Index – Phase XI
+
+Log of irregular or distorted beacons requiring review...

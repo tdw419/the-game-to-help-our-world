@@ -1,0 +1,3 @@
+# Observer Node Network – Phase XI
+
+List and role map of all passive monitoring nodes...

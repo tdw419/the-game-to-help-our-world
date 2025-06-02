@@ -1,0 +1,3 @@
+# Observer Fallback Report
+
+What to do if all signal triangulation fails...
