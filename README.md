@@ -1,3 +1,3 @@
-# The Game to Fix Our World
+# The Game to Help Our World
 
 Initial version backup release.
