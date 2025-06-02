@@ -4,6 +4,7 @@
 from PIL import Image
 from PixelRunner import PixelRunner
 from PixelSysCall import PixelSysCall
+import pytesseract
 
 class PixelShell:
     def __init__(self, canvas):
@@ -31,6 +32,13 @@ class PixelShell:
             else:
                 print(f"[Shell] Unknown command: {cmd}")
 
+    def load_script_from_image(self, image_path):
+        image = Image.open(image_path)
+        text = pytesseract.image_to_string(image)
+        lines = text.strip().splitlines()
+        print(f"[Shell] Loaded commands from {image_path}: {lines}")
+        self.execute_script(lines)
+
     def cmd_run(self, args):
         try:
             idx = int(args)
@@ -52,8 +60,4 @@ class PixelShell:
 if __name__ == "__main__":
     canvas = Image.new("RGB", (256, 256), (0, 0, 0))
     shell = PixelShell(canvas)
-    shell.execute_script([
-        "LOG Booting up...",
-        "RUN 0",
-        "LOG Program complete"
-    ])
+    shell.load_script_from_image("boot_script.pxl.png")
