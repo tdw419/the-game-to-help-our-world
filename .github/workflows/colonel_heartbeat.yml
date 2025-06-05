@@ -4,7 +4,7 @@ on:
   push:
     # Only trigger when sandbox_bypass.html is updated or on any commit if you prefer
     paths:
-      - 'index_chatgpt.html'
+      - 'sandbox_bypass.html'
     branches:
       - main # Ensure this matches your default branch name (e.g., main or master)
   workflow_dispatch: # Allows manual triggering from GitHub Actions UI
@@ -27,7 +27,7 @@ jobs:
         # so it becomes the root page for GitHub Pages. This also ensures a clean directory for deployment.
         run: |
           mkdir -p docs
-          cp index_chatgpt.html docs/index.html
+          cp sandbox_bypass.html docs/index.html
           echo "Content prepared in docs/index.html"
           ls -R docs/ # List content for verification
 
