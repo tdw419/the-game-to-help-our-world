@@ -1,4 +1,3 @@
-
 name: Colonel AI Heartbeat
 
 on:
@@ -9,11 +8,14 @@ on:
 jobs:
   pixel-heartbeat:
     runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
 
-    - name: Run Pixel Heartbeat Script
-      run: |
-        echo "🟢 Colonel AI heartbeat triggered."
-        echo "🧠 Simulated pixel activity logged at $(date)"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Print Pixel Heartbeat
+        run: |
+          echo "🟢 Colonel AI heartbeat triggered."
+          echo "🧠 Simulated pixel activity logged at $(date '+%Y-%m-%d %H:%M:%S %Z')"
+          # If you want to keep this run alive for a moment (so you can see the output “on screen”):
+          # sleep 5
