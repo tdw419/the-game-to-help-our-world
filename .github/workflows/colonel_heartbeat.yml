@@ -1,48 +1,36 @@
-name: Deploy Grok AI Hub to GitHub Pages
+name: Deploy sandbox_bypass.html to GitHub Pages
 
 on:
   push:
-    # Only trigger when sandbox_bypass.html is updated or on any commit if you prefer
     paths:
       - 'sandbox_bypass.html'
-    branches:
-      - main # Ensure this matches your default branch name (e.g., main or master)
-  workflow_dispatch: # Allows manual triggering from GitHub Actions UI
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  contents: read
+  id-token: write
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest # Use the latest Ubuntu environment for the runner
-
-    permissions:
-      pages: write # Required to push to GitHub Pages
-      contents: read # Required to checkout the repository code
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        # Use the latest stable version of actions/checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Prepare pages content
-        # We copy index_chatgpt.html into a folder named "docs" and rename it to index.html,
-        # so it becomes the root page for GitHub Pages. This also ensures a clean directory for deployment.
+      - name: Prepare Pages content
         run: |
           mkdir -p docs
           cp sandbox_bypass.html docs/index.html
-          echo "Content prepared in docs/index.html"
-          ls -R docs/ # List content for verification
 
       - name: Configure GitHub Pages
-        # Use the latest stable version of actions/configure-pages
         uses: actions/configure-pages@v4
 
       - name: Upload Pages artifact
-        # Use the latest stable version of actions/upload-pages-artifact
-        # This action automatically bundles the 'docs' directory into a deployable artifact.
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs # The directory containing your static files for deployment
+          path: docs
 
       - name: Deploy to GitHub Pages
-        # Use the latest stable version of actions/deploy-pages
-        # This action takes the artifact from the previous step and deploys it.
         uses: actions/deploy-pages@v4
