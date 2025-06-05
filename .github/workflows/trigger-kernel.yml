@@ -1,13 +1,26 @@
 name: Kernel Heartbeat
 
 on:
-  workflow_dispatch:  # Enables manual trigger
+  workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'  # Optional: auto-run every 15 minutes
+    - cron: '*/15 * * * *'
 
 jobs:
   ping:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Heartbeat Signal
-        run: echo "💓 Kernel heartbeat received."
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Update status.json
+        run: |
+          echo "{\"last_heartbeat\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > status.json
+
+      - name: Commit status
+        run: |
+          git config --global user.name 'Kernel AI Bot'
+          git config --global user.email 'ai@kernel.com'
+          git add status.json
+          git commit -m "🔁 Kernel heartbeat update"
+          git push
