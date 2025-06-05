@@ -2,7 +2,6 @@ name: Deploy index_chatgpt.html to GitHub Pages
 
 on:
   push:
-    # Only trigger when index_chatgpt.html is updated (or on any commit if you prefer)
     paths:
       - 'index_chatgpt.html'
   workflow_dispatch:
@@ -12,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      # Required to push to GitHub Pages
       pages: write
       contents: read
 
@@ -21,8 +19,6 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Prepare pages content
-        # We copy index_chatgpt.html into a folder named "docs" and rename it to index.html,
-        # so it becomes the root page for GitHub Pages.
         run: |
           mkdir -p docs
           cp index_chatgpt.html docs/index.html
@@ -30,7 +26,7 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v3
 
-      - name: Upload artifact for GitHub Pages
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: docs
