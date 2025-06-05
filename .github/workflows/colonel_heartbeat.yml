@@ -1,20 +1,39 @@
-name: Colonel AI Heartbeat
+name: Deploy index_chatgpt.html to GitHub Pages
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
+  push:
+    # Only trigger when index_chatgpt.html is updated (or on any commit if you prefer)
+    paths:
+      - 'index_chatgpt.html'
   workflow_dispatch:
 
 jobs:
-  pixel-heartbeat:
+  deploy:
     runs-on: ubuntu-latest
 
+    permissions:
+      # Required to push to GitHub Pages
+      pages: write
+      contents: read
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Print Pixel Heartbeat
-        shell: bash
+      - name: Prepare pages content
+        # We copy index_chatgpt.html into a folder named "docs" and rename it to index.html,
+        # so it becomes the root page for GitHub Pages.
         run: |
-          echo "🟢 Colonel AI heartbeat triggered."
-          echo "🧠 Simulated pixel activity logged at $(date '+%Y-%m-%d %H:%M:%S %Z')"
+          mkdir -p docs
+          cp index_chatgpt.html docs/index.html
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
