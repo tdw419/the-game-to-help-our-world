@@ -18,6 +18,8 @@ jobs:
         echo "{\"last_heartbeat\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > status.json
 
     - name: Commit and Push to Repository using PAT
+      env:
+        TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         git config --global user.email "ai@kernel.bot"
         git config --global user.name "AI Kernel"
@@ -25,5 +27,4 @@ jobs:
         git pull
         git add status.json
         git commit -m "💓 Kernel heartbeat at $(date -u)"
-        TOKEN=${{ secrets.PAT_TOKEN }}
         git push https://x-access-token:${TOKEN}@github.com/tdw419/the-game-to-help-our-world.git
