@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Color OS Kernel Monitor</title>
+  <style>
+    body { background: black; color: lime; font-family: monospace; padding: 2em; }
+    pre { background: #111; padding: 1em; border: 1px solid lime; max-height: 300px; overflow-y: auto; }
+    .status { color: yellow; margin-top: 1em; }
+    button { background: lime; color: black; padding: 10px; margin-top: 1em; cursor: pointer; border: none; }
+  </style>
+</head>
+<body>
+  <h1>🧠 Color OS Kernel Monitor</h1>
+
+  <div class="status" id="status-line">Loading AI Kernel Status...</div>
+
+  <h3>📡 Last Kernel Log:</h3>
+  <pre id="kernel-log">Loading...</pre>
+
+  <h3>📋 Active Tasks:</h3>
+  <pre id="task-list">Loading...</pre>
+
+  <button onclick="triggerRefresh()">🔁 Trigger Kernel Update</button>
+
+  <script>
+    async function fetchText(url) {
+      try {
+        const res = await fetch(url);
+        return await res.text();
+      } catch {
+        return "⚠️ Failed to fetch " + url;
+      }
+    }
+
+    async function updateDashboard() {
+      const log = await fetchText('https://the-game-to-help-our-world.sourceforge.io/ColorOS/kernel_status.log');
+      const tasks = await fetchText('https://the-game-to-help-our-world.sourceforge.io/ColorOS/ai_tasks.json');
+      const heartbeat = log.trim().split("\\n").slice(-1)[0];
+
+      document.getElementById('kernel-log').textContent = log.trim().split("\\n").slice(-5).join("\\n");
+      document.getElementById('task-list').textContent = tasks;
+      document.getElementById('status-line').textContent = `🟢 Kernel Last Active: ${heartbeat}`;
+    }
+
+    function triggerRefresh() {
+      fetch('https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/dispatches', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'token YOUR_GITHUB_PAT',
+          'Accept': 'application/vnd.github.everest-preview+json'
+        },
+        body: JSON.stringify({ event_type: 'trigger-kernel' })
+      }).then(() => {
+        alert("✅ Refresh triggered");
+      }).catch(() => {
+        alert("❌ Failed to trigger refresh");
+      });
+    }
+
+    updateDashboard();
+    setInterval(updateDashboard, 60000); // auto-refresh every 1 min
+  </script>
+</body>
+</html>
