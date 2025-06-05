@@ -25,4 +25,5 @@ jobs:
         git pull
         git add status.json
         git commit -m "💓 Kernel heartbeat at $(date -u)"
-        git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/tdw419/the-game-to-help-our-world.git
+        TOKEN=${{ secrets.PAT_TOKEN }}
+        git push https://x-access-token:${TOKEN}@github.com/tdw419/the-game-to-help-our-world.git
