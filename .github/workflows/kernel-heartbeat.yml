@@ -1,23 +1,23 @@
 name: Kernel Heartbeat
 
 on:
-  workflow_dispatch:       # Manual run
+  workflow_dispatch:         # Manual trigger
   schedule:
-    - cron: '*/15 * * * *' # Auto run every 15 minutes
+    - cron: '*/15 * * * *'   # Auto-run every 15 minutes
 
 jobs:
   heartbeat:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repo
+    - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Generate status.json heartbeat
+    - name: Generate status.json Heartbeat
       run: |
         echo "{\"last_heartbeat\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"}" > status.json
 
-    - name: Commit and Push Heartbeat to Repo
+    - name: Commit and Push to Repository using PAT
       run: |
         git config --global user.email "ai@kernel.bot"
         git config --global user.name "AI Kernel"
