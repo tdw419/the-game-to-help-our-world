@@ -2,7 +2,7 @@ name: Deploy Grok AI Hub to GitHub Pages
 
 on:
   push:
-    # Only trigger when index_chatgpt.html is updated or on any commit if you prefer
+    # Only trigger when sandbox_bypass.html is updated or on any commit if you prefer
     paths:
       - 'index_chatgpt.html'
     branches:
