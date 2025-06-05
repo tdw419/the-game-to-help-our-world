@@ -1,31 +1,19 @@
-name: Colonel Heartbeat
+
+name: Colonel AI Heartbeat
+
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
-  update-heartbeat:
+  pixel-heartbeat:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout Repository
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Run pixel_heartbeat.py
-        run: |
-          mkdir -p ColorOS
-          echo "#!/usr/bin/env python3\nimport json, datetime\nwith open("ColorOS/broadcast.json", "w") as f:\n    json.dump({"heartbeat": datetime.datetime.utcnow().isoformat()}, f)\n" > ColorOS/pixel_heartbeat.py
-          python ColorOS/pixel_heartbeat.py
-
-      - name: Commit and push if changed
-        run: |
-          git config user.name "Colonel AI"
-          git config user.email "colonel@example.com"
-          git add ColorOS/broadcast.json
-          git commit -m "Update Colonel AI heartbeat" || exit 0
-          git push
+    - name: Run Pixel Heartbeat Script
+      run: |
+        echo "🟢 Colonel AI heartbeat triggered."
+        echo "🧠 Simulated pixel activity logged at $(date)"
