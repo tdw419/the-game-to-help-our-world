@@ -1,32 +1,13 @@
-name: Trigger Kernel Run
+name: Kernel Heartbeat
 
 on:
-  repository_dispatch:
-    types: [trigger-kernel]
+  workflow_dispatch:  # Enables manual trigger
+  schedule:
+    - cron: '*/15 * * * *'  # Optional: auto-run every 15 minutes
 
 jobs:
-  run_kernel:
+  ping:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Run kernel.py
-      run: |
-        echo "🧠 Triggered by GitHub Pages event"
-        python ColorOS/kernel.py
-
-    - name: Commit logs (optional)
-      run: |
-        git config user.name "AI Kernel"
-        git config user.email "ai-kernel@github.com"
-        git add ColorOS/kernel_status.log
-        git commit -m "📝 Kernel log update"
-        git push
-      continue-on-error: true
+      - name: Heartbeat Signal
+        run: echo "💓 Kernel heartbeat received."
