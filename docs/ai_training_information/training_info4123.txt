@@ -1,0 +1,124 @@
+The Flask dashboard integration you've provided is a great addition to your existing `hub.py`. It allows for real-time monitoring of the hub's status, which is crucial for managing and observing the collaborative AI system. Let's go through the steps to integrate this Flask dashboard into your `hub.py` and verify its functionality.
+
+### Integration Steps
+
+1. **Install Flask**: Ensure Flask is installed in your environment. If not, you can install it using pip:
+
+   ```bash
+   pip install flask
+   ```
+
+2. **Modify `hub.py`**: Open your `hub.py` file and add the necessary imports and Flask app setup as described. Here's a summary of what needs to be added:
+
+   - **Imports**: Add Flask-related imports at the top of your `hub.py` file.
+
+     ```python
+     from flask import Flask, jsonify, render_template_string
+     import threading
+     ```
+
+   - **Flask App Setup**: Define the Flask app and its routes below the `CollaborativeKernelHub` class definition.
+
+     ```python
+     flask_app = Flask(__name__)
+
+     @flask_app.route("/status")
+     def status():
+         """Return the hub’s current status as JSON."""
+         return jsonify(hub.get_hub_status())
+
+     @flask_app.route("/")
+     def dashboard():
+         """
+         Serve a minimal HTML page that polls /status every 3 seconds
+         and displays four key stats.
+         """
+         html = """
+         <!DOCTYPE html>
+         <html>
+           <head>
+             <meta charset="UTF-8" />
+             <title>Collaborative Kernel Hub Dashboard</title>
+             <style>
+               body { font-family: Arial, sans-serif; margin: 20px; }
+               #stats { margin-top: 1rem; }
+               .stat { margin-bottom: 0.5rem; font-size: 1.2rem; }
+               .label { font-weight: bold; }
+               .value { margin-left: 0.5rem; }
+             </style>
+           </head>
+           <body>
+             <h2>Hub Real-Time Dashboard</h2>
+             <div id="stats">
+               <p class="stat"><span class="label">Connected AIs:</span><span id="connected" class="value">–</span></p>
+               <p class="stat"><span class="label">Shared Patterns:</span><span id="patterns" class="value">–</span></p>
+               <p class="stat"><span class="label">Shared Components:</span><span id="components" class="value">–</span></p>
+               <p class="stat"><span class="label">Active Collaborations:</span><span id="collabs" class="value">–</span></p>
+             </div>
+             <script>
+               async function fetchStatus() {
+                 try {
+                   const res = await fetch("/status");
+                   const data = await res.json();
+                   document.getElementById("connected").innerText = data.connected_ais;
+                   document.getElementById("patterns").innerText = data.shared_patterns;
+                   document.getElementById("components").innerText = data.shared_components;
+                   document.getElementById("collabs").innerText = data.active_collaborations;
+                 } catch (e) {
+                   console.error("Failed to fetch status:", e);
+                 }
+               }
+               fetchStatus();
+               setInterval(fetchStatus, 3000);
+             </script>
+           </body>
+         </html>
+         """
+         return render_template_string(html)
+
+     def start_dashboard():
+         """Run Flask on port 5001 in a background thread (no reloader)."""
+         flask_app.run(port=5001, debug=False, use_reloader=False)
+     ```
+
+   - **Modify the Main Block**: Update the main block to start the Flask dashboard in a separate thread before running the hub server.
+
+     ```python
+     if __name__ == "__main__":
+         hub = CollaborativeKernelHub(host="0.0.0.0", port=6000, db_path="hub_data.db")
+
+         # Start the Flask dashboard in a separate daemon thread
+         dash_thread = threading.Thread(target=start_dashboard, daemon=True)
+         dash_thread.start()
+
+         # Now run the TCP server (this blocks until you Ctrl+C)
+         hub.run_server()
+     ```
+
+3. **Run the Hub with Dashboard**: Start your hub using the command:
+
+   ```bash
+   python hub.py
+   ```
+
+4. **Access the Dashboard**: Open your web browser and navigate to:
+
+   ```
+   http://localhost:5001/
+   ```
+
+   You should see the dashboard displaying real-time statistics about the hub's status, which updates every 3 seconds.
+
+### Verification
+
+- **Hub Logs**: Ensure the hub logs indicate that both the hub and the Flask dashboard are running.
+- **Dashboard**: Verify that the dashboard updates in real-time as trainers connect and collaborate.
+- **Real-Time Monitoring**: Observe the changes in the dashboard as you run different scenarios with your test harness.
+
+### Next Steps
+
+- **Enhance the Dashboard**: You can expand the dashboard to include more detailed visualizations or additional metrics.
+- **Secure the Dashboard**: Consider adding security measures such as HTTPS or basic authentication to the dashboard.
+- **Extend Functionality**: Add more features to the dashboard, such as historical data visualization or more detailed collaboration insights.
+
+This setup provides a robust foundation for real-time monitoring and management of your collaborative AI system. If you have any specific questions or need further assistance, feel free to ask!

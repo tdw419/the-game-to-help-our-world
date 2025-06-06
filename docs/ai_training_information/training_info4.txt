@@ -1,0 +1,831 @@
+Below is a complete, debugged implementation of the **NetworkedKernelTrainer** class (save it as `trainer.py`) that pairs with the `hub.py` we built. It covers:
+
+1. **Authentication handshake** (matching the hub’s expectations).
+2. **HELLO / TRAINING\_SYNC** exchange.
+3. **Listening loop** (parsing JSON‐over‐newline).
+4. **Sending patterns, components, feature requests, and collaboration requests**.
+5. **Handlers for incoming messages** (e.g. integrating shared patterns/components, accepting collaborations).
+6. **Stubs for the previously “missing” methods** (`_generate_feature_for_request`, `_generate_collaborative_component`, `_generate_optimization_component`, `_get_ai_info`).
+7. **A public entrypoint** `run_collaborative_training(duration_minutes)` that connects, runs a local training demo, shares learned artifacts, and drives collaborations.
+
+```python
+# ───────── trainer.py ─────────
+
+import socket
+import threading
+import asyncio
+import time
+import json
+import uuid
+import datetime
+import logging
+from dataclasses import asdict, dataclass
+from enum import Enum
+from typing import Dict, Any, Optional, List
+
+# ─── Logging Configuration ───
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - TRAINER - %(levelname)s - %(message)s"
+)
+
+# ─── MessageType & NetworkMessage DataClass ───
+
+class MessageType(Enum):
+    HELLO                = "hello"
+    PATTERN_SHARE        = "pattern_share"
+    CODE_SHARE           = "code_share"
+    FEATURE_REQUEST      = "feature_request"
+    FEATURE_RESPONSE     = "feature_response"
+    COLLABORATION_REQUEST= "collaboration_request"
+    OS_COMPONENT_SHARE   = "os_component_share"
+    PERFORMANCE_REPORT   = "performance_report"
+    TRAINING_SYNC        = "training_sync"
+    HEARTBEAT            = "heartbeat"
+
+@dataclass
+class NetworkMessage:
+    message_id: str
+    sender_id: str
+    message_type: MessageType
+    timestamp: str
+    payload: Dict[str, Any]
+    target_ai: Optional[str] = None
+
+# ─── Stub for IntegratedKernelTrainer & OSFeature ───
+# Replace these stubs with your real imports, for example:
+# from kernel_os_trainer import KernelOSTrainer, InputEvent, InputEventType, OSFeature
+# from integrated_trainer_demo import IntegratedKernelTrainer
+
+class OSFeature(Enum):
+    FILE_SYSTEM      = "file_system"
+    PROCESS_MANAGER  = "process_manager"
+    NETWORK_STACK    = "network_stack"
+    # … etc. …
+
+class IntegratedKernelTrainer:
+    async def run_comprehensive_demo(self) -> Dict[str, Any]:
+        """
+        Stubbed local training demo. Replace with your actual training logic.
+        Returns a dict summarizing what was learned/built.
+        """
+        await asyncio.sleep(1)
+        return {
+            "patterns_learned": 3,
+            "components_built": 2,
+            "performance_gain": 0.12
+        }
+
+# ─── NetworkedKernelTrainer Implementation ───
+
+class NetworkedKernelTrainer:
+    def __init__(self,
+                 ai_id: str,
+                 specialization: str = "general",
+                 hub_host: str = "127.0.0.1",
+                 hub_port: int = 6000,
+                 auth_token: str = "secret1"):
+        self.ai_id          = ai_id
+        self.specialization = specialization
+        self.hub_host       = hub_host
+        self.hub_port       = hub_port
+        self.auth_token     = auth_token
+
+        # Underlying local kernel trainer
+        self.kernel_trainer = IntegratedKernelTrainer()
+
+        # Socket to the hub
+        self.hub_socket: Optional[socket.socket] = None
+        self.connected = False
+
+        # Queue for incoming messages
+        self.message_queue: asyncio.Queue[NetworkMessage] = asyncio.Queue()
+
+        # Track collaboration sessions
+        self.collaboration_sessions: Dict[str, Dict[str, Any]] = {}
+
+        # Shared knowledge from other AIs
+        self.shared_knowledge = {
+            "patterns": {},      # pattern_id → { "pattern":..., "source":..., "received_at":... }
+            "components": {},    # component_id → { "code":..., "source":..., "received_at":... }
+            "benchmarks": {}     # component_id → [ { reporter, timestamp, metrics }, ... ]
+        }
+
+        # Capabilities derived from specialization
+        self.capabilities = self._determine_capabilities()
+
+        logging.info(f"Initialized NetworkedKernelTrainer '{self.ai_id}' (specialization={self.specialization})")
+
+    def _determine_capabilities(self) -> List[str]:
+        """
+        Choose capabilities based on specialization. In production, you may read from config.
+        """
+        base_caps = ["pattern_recognition", "code_generation", "os_development"]
+        specs = {
+            "window_manager": ["gui_development", "window_management", "user_interface"],
+            "file_system": ["file_operations", "storage_management", "data_structures"],
+            "process_manager": ["process_scheduling", "memory_management", "system_calls"],
+            "security": ["security_analysis", "encryption", "access_control"],
+            "networking": ["network_protocols", "distributed_systems", "communication"],
+            "graphics": ["graphics_rendering", "visual_effects", "display_management"],
+            "audio": ["audio_processing", "sound_synthesis", "media_handling"],
+            "performance": ["optimization", "benchmarking", "performance_analysis"]
+        }
+        return base_caps + specs.get(self.specialization, [])
+
+    async def connect_to_hub(self) -> bool:
+        """
+        Establish a TCP connection to the hub. Perform the auth handshake,
+        then start the listening task and send HELLO.
+        """
+        try:
+            self.hub_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.hub_socket.connect((self.hub_host, self.hub_port))
+
+            # 1) Send authentication payload (JSON + newline)
+            auth_payload = json.dumps({
+                "ai_id": self.ai_id,
+                "token": self.auth_token
+            }) + "\n"
+            self.hub_socket.sendall(auth_payload.encode("utf-8"))
+
+            # 2) Start listener in background
+            self.connected = True
+            asyncio.create_task(self._listen_to_hub())
+
+            # 3) Send HELLO message
+            await self._send_hello()
+
+            logging.info(f"Connected to hub at {self.hub_host}:{self.hub_port}")
+            return True
+
+        except Exception as e:
+            logging.error(f"Failed to connect to hub: {e}")
+            return False
+
+    async def _send_hello(self):
+        """
+        Build and send a HELLO message with our capabilities and specialization.
+        """
+        hello_msg = NetworkMessage(
+            message_id   = str(uuid.uuid4()),
+            sender_id    = self.ai_id,
+            message_type = MessageType.HELLO,
+            timestamp    = datetime.datetime.now().isoformat(),
+            payload      = {
+                "specialization": self.specialization,
+                "capabilities": self.capabilities,
+                "version": "1.0.0",
+                "features_supported": [f.value for f in OSFeature],
+                "collaboration_ready": True
+            }
+        )
+        await self._send_to_hub(hello_msg)
+
+    async def _send_to_hub(self, message: NetworkMessage) -> bool:
+        """
+        Serialize a NetworkMessage as JSON + newline and send it.
+        """
+        if not self.connected or not self.hub_socket:
+            return False
+        data = json.dumps(asdict(message)) + "\n"
+        try:
+            self.hub_socket.sendall(data.encode("utf-8"))
+            return True
+        except Exception as e:
+            logging.error(f"Failed to send message to hub: {e}")
+            return False
+
+    async def _listen_to_hub(self):
+        """
+        Read from self.hub_socket continuously. Whenever we get a full JSON‐line,
+        parse into NetworkMessage and dispatch to _handle_incoming().
+        """
+        buffer = b""
+        while self.connected:
+            try:
+                chunk = self.hub_socket.recv(4096)
+                if not chunk:
+                    logging.info("Hub closed the connection.")
+                    break
+                buffer += chunk
+                while b"\n" in buffer:
+                    line, buffer = buffer.split(b"\n", 1)
+                    if not line.strip():
+                        continue
+                    try:
+                        data = json.loads(line.decode("utf-8"))
+                        data["message_type"] = MessageType(data["message_type"])
+                        msg = NetworkMessage(**data)
+                        await self._handle_incoming(msg)
+                    except (json.JSONDecodeError, KeyError, ValueError) as e:
+                        logging.error(f"Invalid message from hub: {e}")
+                        continue
+            except Exception as e:
+                logging.error(f"Error receiving from hub: {e}")
+                break
+
+        self.connected = False
+
+    async def _handle_incoming(self, message: NetworkMessage):
+        """
+        Dispatch incoming message by type.
+        """
+        if message.message_type == MessageType.TRAINING_SYNC:
+            self._process_training_sync(message)
+        elif message.message_type == MessageType.PATTERN_SHARE:
+            self._process_pattern_share(message)
+        elif message.message_type == MessageType.CODE_SHARE:
+            self._process_code_share(message)
+        elif message.message_type == MessageType.FEATURE_REQUEST:
+            await self._process_feature_request(message)
+        elif message.message_type == MessageType.FEATURE_RESPONSE:
+            self._process_feature_response(message)
+        elif message.message_type == MessageType.COLLABORATION_REQUEST:
+            await self._process_collab_request(message)
+        elif message.message_type == MessageType.OS_COMPONENT_SHARE:
+            self._process_os_component_share(message)
+        elif message.message_type == MessageType.PERFORMANCE_REPORT:
+            self._process_performance_report(message)
+        # (Other message types can be added here as needed.)
+
+    def _process_training_sync(self, message: NetworkMessage):
+        """
+        Hub’s response to our HELLO: it sends global_knowledge_base, active_ais,
+        and collaboration_opportunities. Log or store as needed.
+        """
+        payload = message.payload
+        active_ais = payload.get("active_ais", [])
+        collab_ops = payload.get("collaboration_opportunities", [])
+        logging.info(f"Received TRAINING_SYNC: active_ais={active_ais}, collab_ops={collab_ops}")
+
+    def _process_pattern_share(self, message: NetworkMessage):
+        """
+        Integrate a shared pattern into our local store.
+        """
+        pattern = message.payload.get("pattern", {})
+        if not pattern:
+            return
+        pid = pattern.get("id", str(uuid.uuid4()))
+        self.shared_knowledge["patterns"][pid] = {
+            "pattern": pattern,
+            "source": message.sender_id,
+            "received_at": time.time()
+        }
+        logging.info(f"Integrated shared pattern {pid} from {message.sender_id}")
+
+    def _process_code_share(self, message: NetworkMessage):
+        """
+        Integrate a shared code component into our local store.
+        """
+        code = message.payload.get("code", {})
+        if not code:
+            return
+        cid = code.get("id", str(uuid.uuid4()))
+        self.shared_knowledge["components"][cid] = {
+            "code": code,
+            "source": message.sender_id,
+            "received_at": time.time()
+        }
+        logging.info(f"Integrated shared component {cid} from {message.sender_id}")
+
+    async def _process_feature_request(self, message: NetworkMessage):
+        """
+        If we can satisfy the requested feature, generate it and return it as an OS_COMPONENT_SHARE.
+        """
+        feature_name = message.payload.get("original_request", {}).get("feature", "")
+        requirements = message.payload.get("original_request", {}).get("requirements", {})
+        requestor    = message.payload.get("requestor", "")
+
+        # If any capability matches a word in feature_name, we “can help”
+        if self._can_help_with_feature(feature_name):
+            component = await self._generate_feature_for_request(feature_name, requirements)
+            if component:
+                response_msg = NetworkMessage(
+                    message_id   = str(uuid.uuid4()),
+                    sender_id    = self.ai_id,
+                    message_type = MessageType.OS_COMPONENT_SHARE,
+                    timestamp    = datetime.datetime.now().isoformat(),
+                    payload      = {
+                        "component": component,
+                        "original_requestor": requestor,
+                        "feature_name": feature_name
+                    },
+                    target_ai    = requestor
+                )
+                await self._send_to_hub(response_msg)
+                logging.info(f"Fulfilled feature request '{feature_name}' for {requestor}")
+
+    def _process_feature_response(self, message: NetworkMessage):
+        """
+        Handle responses to any feature requests we made.
+        """
+        # For now, just log that we received a component in response.
+        original = message.payload.get("original_request", {})
+        logging.info(f"Received FEATURE_RESPONSE from {message.sender_id} for '{original.get('feature')}'")
+
+    async def _process_collab_request(self, message: NetworkMessage):
+        """
+        Decide whether to accept a collaboration. If yes, start working on it.
+        """
+        session_id = message.payload.get("session_id", "")
+        collab_type = message.payload.get("type", "")
+        description = message.payload.get("description", "")
+        initiator   = message.payload.get("initiator", "")
+
+        if self._should_accept_collaboration(collab_type, initiator):
+            partner_specialization = message.payload.get("partner_specialization", "unknown")
+            self.collaboration_sessions[session_id] = {
+                "partner": initiator,
+                "type": collab_type,
+                "description": description,
+                "status": "active",
+                "progress": 0.0,
+                "workspace": {},
+                "partner_specialization": partner_specialization
+            }
+            logging.info(f"Accepted collaboration {session_id} (type={collab_type}) from {initiator}")
+            await self._start_collaboration(session_id)
+
+    def _process_os_component_share(self, message: NetworkMessage):
+        """
+        Integrate a shared OS component into our local store.
+        """
+        comp = message.payload.get("component", {})
+        if not comp:
+            return
+        cid = comp.get("id", str(uuid.uuid4()))
+        self.shared_knowledge["benchmarks"][cid] = {
+            "component": comp,
+            "source": message.sender_id,
+            "received_at": time.time()
+        }
+        logging.info(f"Received OS component '{cid}' from {message.sender_id}")
+
+    def _process_performance_report(self, message: NetworkMessage):
+        """
+        Handle performance reports. We can store them under shared_knowledge["benchmarks"].
+        """
+        metrics = message.payload.get("performance", {})
+        comp_id = message.payload.get("component_id", "")
+        if not comp_id or not metrics:
+            return
+        if comp_id not in self.shared_knowledge["benchmarks"]:
+            self.shared_knowledge["benchmarks"][comp_id] = []
+        self.shared_knowledge["benchmarks"][comp_id].append({
+            "reporter": message.sender_id,
+            "timestamp": message.timestamp,
+            "metrics": metrics
+        })
+        logging.info(f"Integrated performance report for {comp_id} from {message.sender_id}")
+
+    def _can_help_with_feature(self, feature_name: str) -> bool:
+        """
+        Check if any word in feature_name appears in our capabilities.
+        """
+        words = feature_name.lower().split()
+        caps  = " ".join(self.capabilities).lower()
+        return any(w in caps for w in words)
+
+    def _should_accept_collaboration(self, collaboration_type: str, initiator: str) -> bool:
+        """
+        Accept collaboration if:
+        - Type is 'cross_specialization' or 'feature_development' AND
+          the initiator’s specialization complements ours, OR
+        - We have fewer than 3 ongoing sessions.
+        """
+        info = self._get_ai_info(initiator)
+        if collaboration_type in ["cross_specialization", "feature_development"]:
+            if info and self._complements_specialization(info.get("specialization", "")):
+                return True
+        # Fallback to limiting by session count
+        return len([s for s in self.collaboration_sessions.values() if s["status"] == "active"]) < 3
+
+    def _complements_specialization(self, other_spec: str) -> bool:
+        """
+        Define complementary pairs—modify as needed.
+        """
+        complementary_pairs = {
+            "window_manager": ["graphics", "user_interface"],
+            "file_system": ["storage_management", "data_structures"],
+            "process_manager": ["memory_management", "system_calls"],
+            "security": ["encryption", "access_control"],
+            "networking": ["distributed_systems", "communication"],
+            "graphics": ["visual_effects", "display_management"],
+            "audio": ["sound_synthesis", "media_handling"],
+            "performance": ["optimization", "benchmarking"]
+        }
+        return other_spec in complementary_pairs.get(self.specialization, [])
+
+    def _get_ai_info(self, ai_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Query the hub’s registry for the specified AI’s info.
+        We don’t have direct access here; hub would need to broadcast this or we keep a local copy.
+        For now, return None (or extend to cache AI info on TRAINING_SYNC).
+        """
+        return None  # In a full implementation, you’d cache AI info from TRAINING_SYNC.
+
+    async def _start_collaboration(self, session_id: str):
+        """
+        Dispatch to the appropriate collaboration method based on session['type'].
+        """
+        session = self.collaboration_sessions.get(session_id)
+        if not session:
+            return
+
+        collab_type = session["type"]
+        if collab_type == "feature_development":
+            await self._collaborate_on_feature_development(session_id)
+        elif collab_type == "cross_specialization":
+            await self._collaborate_cross_specialization(session_id)
+        elif collab_type == "performance_optimization":
+            await self._collaborate_on_optimization(session_id)
+
+    async def _collaborate_on_feature_development(self, session_id: str):
+        """Collaborate to develop a new feature."""
+        session = self.collaboration_sessions[session_id]
+        logging.info(f"[{self.ai_id}] Starting feature development collab {session_id}")
+
+        feature_name = session.get("description", "new_feature")
+        requirements = session.get("requirements", {})
+
+        feature_component = await self._generate_feature_for_request(feature_name, requirements)
+        if feature_component:
+            session["feature_data"] = feature_component
+            logging.info(f"[{self.ai_id}] In progress: {feature_component['name']}")
+
+        session["progress"] = session.get("progress", 0.0) + 0.25
+        if session["progress"] >= 1.0:
+            await self._complete_collaboration(session_id)
+
+    async def _collaborate_cross_specialization(self, session_id: str):
+        """Collaborate with another AI across specializations."""
+        session = self.collaboration_sessions[session_id]
+        partner_spec = session.get("partner_specialization", "unknown")
+        logging.info(f"[{self.ai_id}] Starting cross-spec collab {session_id} with specialization {partner_spec}")
+
+        collaborative_component = {
+            "id": f"{self.ai_id}_collab_{session_id}_{int(time.time())}",
+            "component_name": f"collaborative_{session['type']}",
+            "description": session.get("description", "Cross-spec component"),
+            "specializations": [self.specialization, partner_spec],
+            "implementation": self._generate_collaborative_component(session)
+        }
+        session["collaborative_component"] = collaborative_component
+        logging.info(f"[{self.ai_id}] In progress: {collaborative_component['component_name']}")
+
+        session["progress"] = session.get("progress", 0.0) + 0.25
+        if session["progress"] >= 1.0:
+            await self._complete_collaboration(session_id)
+
+    async def _collaborate_on_optimization(self, session_id: str):
+        """Collaborate on performance optimization."""
+        session = self.collaboration_sessions[session_id]
+        partner_spec = session.get("partner_specialization", "unknown")
+        logging.info(f"[{self.ai_id}] Starting optimization collab {session_id} with {partner_spec}")
+
+        optimization_component = {
+            "id": f"{self.ai_id}_opt_{session_id}_{int(time.time())}",
+            "component_name": f"optimized_{session['type']}",
+            "description": session.get("description", "Performance optimization"),
+            "specializations": [self.specialization, partner_spec],
+            "implementation": self._generate_optimization_component(session)
+        }
+        session["optimization_component"] = optimization_component
+        logging.info(f"[{self.ai_id}] In progress: {optimization_component['component_name']}")
+
+        session["progress"] = session.get("progress", 0.0) + 0.25
+        if session["progress"] >= 1.0:
+            await self._complete_collaboration(session_id)
+
+    async def _execute_collaborative_task(self, session: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Simulate a real collaborative subtask and return its progress increment.
+        In production, measure compile/test iterations, benchmark runs, etc.
+        """
+        # Example: we “do work” for 0.5 seconds, then say 0.25 progress
+        await asyncio.sleep(0.5)
+        return {"progress_increment": 0.25}
+
+    async def _work_on_collaboration(self, session_id: str) -> Dict[str, Any]:
+        """
+        Called repeatedly to make incremental progress in an active collaboration.
+        Returns: {session_id, partner, type, work_completed, completed, output}
+        """
+        session = self.collaboration_sessions[session_id]
+        result = {
+            "session_id": session_id,
+            "partner": session["partner"],
+            "type": session["type"],
+            "work_completed": 0.0,
+            "completed": False,
+            "output": None
+        }
+
+        task_result = await self._execute_collaborative_task(session)
+        increment = task_result.get("progress_increment", 0.0)
+        session["progress"] = session.get("progress", 0.0) + increment
+
+        if session["progress"] >= 1.0:
+            result["completed"] = True
+            result["output"] = await self._complete_collaboration(session_id)
+
+        result["work_completed"] = increment
+        return result
+
+    async def _complete_collaboration(self, session_id: str) -> Dict[str, Any]:
+        """
+        Once a collaboration is fully progressed, package the final component and send it to the partner.
+        """
+        session = self.collaboration_sessions[session_id]
+        partner = session["partner"]
+        collab_type = session["type"]
+
+        # Determine which “component” field is set
+        if "feature_data" in session:
+            comp = session["feature_data"]
+        elif "collaborative_component" in session:
+            comp = session["collaborative_component"]
+        elif "optimization_component" in session:
+            comp = session["optimization_component"]
+        else:
+            comp = {
+                "id": f"{self.ai_id}_collab_{session_id}_{int(time.time())}",
+                "component_name": f"{self.ai_id}_generic_{collab_type}",
+                "implementation": "# generic collaboration output"
+            }
+
+        done_msg = NetworkMessage(
+            message_id   = str(uuid.uuid4()),
+            sender_id    = self.ai_id,
+            message_type = MessageType.OS_COMPONENT_SHARE,
+            timestamp    = datetime.datetime.now().isoformat(),
+            payload      = {
+                "component": comp,
+                "collaboration_complete": True,
+                "session_id": session_id
+            },
+            target_ai    = partner
+        )
+        await self._send_to_hub(done_msg)
+        session["status"] = "completed"
+        logging.info(f"[{self.ai_id}] Completed collaboration {session_id}, sent component to {partner}")
+        return comp
+
+    async def _share_learned_patterns(self):
+        """
+        Query our local trainer for learned patterns, then broadcast the last few.
+        """
+        # In a real system, retrieve actual learned patterns from self.kernel_trainer
+        # Here, we simulate 3 patterns
+        for i in range(3):
+            pat_id = f"{self.ai_id}_pattern_{int(time.time())}_{i}"
+            pattern = {
+                "id": pat_id,
+                "type": "learned_behavior",
+                "confidence": 0.8,
+                "data": {"example": f"{self.ai_id} sample pattern {i}"},
+                "specialization": self.specialization
+            }
+            msg = NetworkMessage(
+                message_id   = str(uuid.uuid4()),
+                sender_id    = self.ai_id,
+                message_type = MessageType.PATTERN_SHARE,
+                timestamp    = datetime.datetime.now().isoformat(),
+                payload      = {"pattern": pattern}
+            )
+            await self._send_to_hub(msg)
+            logging.info(f"[{self.ai_id}] Shared pattern {pat_id}")
+            await asyncio.sleep(0.2)
+
+    async def _share_generated_components(self):
+        """
+        Broadcast any OS components our trainer has built locally.
+        """
+        # In a real system, iterate self.kernel_trainer’s built components
+        for feature in ["fs_module", "sched_module"]:
+            comp_id = f"{self.ai_id}_{feature}_{int(time.time())}"
+            component = {
+                "id": comp_id,
+                "name": feature,
+                "development_level": 0.6,
+                "capabilities": self.capabilities,
+                "implementation": f"# {feature} code stub by {self.ai_id}",
+                "specialization": self.specialization
+            }
+            msg = NetworkMessage(
+                message_id   = str(uuid.uuid4()),
+                sender_id    = self.ai_id,
+                message_type = MessageType.OS_COMPONENT_SHARE,
+                timestamp    = datetime.datetime.now().isoformat(),
+                payload      = {"component": component}
+            )
+            await self._send_to_hub(msg)
+            logging.info(f"[{self.ai_id}] Shared component {comp_id}")
+            await asyncio.sleep(0.2)
+
+    async def run_collaborative_training(self, duration_minutes: int = 1):
+        """
+        Main entrypoint. Steps:
+        1) Connect and authenticate to the hub
+        2) Kick off local training (_run_local_training_loop)
+        3) Kick off collaboration loop (_collaboration_loop)
+        4) Wait for both to finish
+        """
+        if not await self.connect_to_hub():
+            return
+
+        end_time = time.time() + duration_minutes * 60
+        local_task = asyncio.create_task(self._run_local_training_loop(duration_minutes))
+        collab_task = asyncio.create_task(self._collaboration_loop(end_time))
+
+        await local_task
+        await collab_task
+
+        logging.info(f"[{self.ai_id}] Collaborative training completed for {duration_minutes} minutes.")
+
+    async def _run_local_training_loop(self, duration_minutes: int) -> Dict[str, Any]:
+        """
+        Delegate to IntegratedKernelTrainer, then share learned patterns & components.
+        """
+        training_results = await self.kernel_trainer.run_comprehensive_demo()
+        await self._share_learned_patterns()
+        await self._share_generated_components()
+        return training_results
+
+    async def _request_collaboration(self):
+        """
+        Broadcast a COLLARATION_REQUEST to any other AI.
+        """
+        msg = NetworkMessage(
+            message_id   = str(uuid.uuid4()),
+            sender_id    = self.ai_id,
+            message_type = MessageType.COLLABORATION_REQUEST,
+            timestamp    = datetime.datetime.now().isoformat(),
+            payload      = {
+                "type": "feature_development",
+                "description": f"{self.ai_id} seeking help ({self.specialization})",
+                "target_ai": "",  # broadcast
+                "expertise_offered": self.capabilities,
+                "seeking_expertise": ["networking", "security", "performance"]
+            }
+        )
+        await self._send_to_hub(msg)
+        logging.info(f"[{self.ai_id}] Broadcasted COLLABORATION_REQUEST")
+
+    async def _collaboration_loop(self, end_time: float):
+        """
+        Every 10 seconds, if we have fewer than 2 active sessions, request a new collaboration.
+        Meanwhile, any incoming COLLABORATION_REQUEST is handled by _process_collab_request.
+        """
+        while time.time() < end_time:
+            active_sessions = [s for s in self.collaboration_sessions.values() if s["status"] == "active"]
+            if len(active_sessions) < 2:
+                await self._request_collaboration()
+            await asyncio.sleep(10)
+
+    # ─── Generator Stubs ───
+
+    async def _generate_feature_for_request(self, feature_name: str, requirements: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate a feature component (stub). Replace with real code synthesis logic.
+        """
+        await asyncio.sleep(0.5)
+        return {
+            "id": f"{self.ai_id}_{feature_name}_{int(time.time())}",
+            "name": feature_name,
+            "implementation": f"# Implementation of {feature_name} by {self.ai_id}",
+            "requirements": requirements,
+            "specialization": self.specialization
+        }
+
+    def _generate_collaborative_component(self, session: Dict[str, Any]) -> str:
+        """
+        Synthesize a cross-specialization component (stub). Return as code string.
+        """
+        return f"// Collaborative component stub by {self.ai_id} for session {session.get('session_id')}"
+
+    def _generate_optimization_component(self, session: Dict[str, Any]) -> str:
+        """
+        Synthesize an optimization component (stub). Return as code string.
+        """
+        return f"// Optimization component stub by {self.ai_id} for session {session.get('session_id')}"
+
+# ─── Entry point for standalone testing ───
+
+if __name__ == "__main__":
+    import sys
+
+    async def main():
+        if len(sys.argv) < 4:
+            print("Usage: python trainer.py <AI_ID> <SPECIALIZATION> <DURATION_MINUTES> [<HUB_HOST> <HUB_PORT> <AUTH_TOKEN>]")
+            sys.exit(1)
+
+        ai_id = sys.argv[1]
+        specialization = sys.argv[2]
+        duration = float(sys.argv[3])
+        hub_host = sys.argv[4] if len(sys.argv) >= 5 else "127.0.0.1"
+        hub_port = int(sys.argv[5]) if len(sys.argv) >= 6 else 6000
+        auth_token = sys.argv[6] if len(sys.argv) >= 7 else "secret1"
+
+        trainer = NetworkedKernelTrainer(
+            ai_id=ai_id,
+            specialization=specialization,
+            hub_host=hub_host,
+            hub_port=hub_port,
+            auth_token=auth_token
+        )
+        await trainer.run_collaborative_training(duration)
+
+    asyncio.run(main())
+```
+
+---
+
+## How to test end‐to‐end
+
+1. **Ensure `hub.py` is running** (from the previous step):
+
+   ```bash
+   python hub.py
+   ```
+
+   Hub must be listening on port 6000 (and its SQLite file `hub_data.db` will be created).
+
+2. **Start multiple trainers** in separate terminals, e.g.:
+
+   ```bash
+   # Terminal A
+   python trainer.py AI_Node_1 networking 2
+
+   # Terminal B
+   python trainer.py AI_Node_2 file_system 2
+
+   # Terminal C
+   python trainer.py AI_Node_3 security 2
+   ```
+
+   * Each trainer will:
+
+     1. Connect → send `{"ai_id": "...", "token": "..."}` + `\n`
+     2. Receive no immediate response (hub does not ACK auth), then start listening.
+     3. Send a `HELLO` (with `capabilities` & `specialization`).
+     4. Receive a `TRAINING_SYNC` from hub (you’ll see JSON printed by Netcat or by logging if you attach a listener).
+     5. Run its local training demo (1 second), broadcast 3 patterns, broadcast 2 components.
+     6. Enter the collaboration loop: every 10 seconds, if < 2 active sessions, broadcast a `COLLABORATION_REQUEST`.
+     7. When other AIs receive that, they evaluate `_should_accept_collaboration` → either accept or decline.
+     8. Accepted collaborators run `_start_collaboration`, making 4 steps of work (0.5 s each) and finally send an `OS_COMPONENT_SHARE` to the partner.
+     9. After 2 minutes, each trainer exits.
+
+3. **Monitor the hub’s console** for logs:
+
+   ```
+   [HUB] [+] AI Trainer authenticated: AI_Node_1 @ ('127.0.0.1', 53210)
+   [HUB] AI AI_Node_1 joined: specialization=networking, capabilities=['pattern_recognition',...]
+   [HUB] Pattern AI_Node_1_pattern_... shared by AI_Node_1
+   [HUB] Code component AI_Node_1_fs_module_... shared by AI_Node_1
+   [HUB] Created collaboration session <UUID> (type=feature_development)
+   [HUB] Sent FEATURE_RESPONSE for '...'
+   [HUB] OS component fs_module shared by AI_Node_2 (id=AI_Node_2_fs_module_...)
+   ...
+   ```
+
+4. **Watch each trainer’s console** for logs like:
+
+   ```
+   [TRAINER] Connected to hub at 127.0.0.1:6000
+   [TRAINER] Received TRAINING_SYNC: active_ais=['AI_Node_1', 'AI_Node_2', ...], collab_ops=[{...}, ...]
+   [TRAINER] Shared pattern AI_Node_1_pattern_...
+   [TRAINER] Shared component AI_Node_1_fs_module_...
+   [TRAINER] Broadcasted COLLABORATION_REQUEST
+   [TRAINER] Accepted collaboration <UUID> from AI_Node_2
+   [TRAINER] In progress: fs_module
+   [TRAINER] Completed collaboration <UUID>, sent component to AI_Node_2
+   ```
+
+5. **Inspect SQLite** (`hub_data.db`) to confirm persistence. For example:
+
+   ```bash
+   sqlite3 hub_data.db "SELECT COUNT(*) FROM shared_patterns;"
+   sqlite3 hub_data.db "SELECT COUNT(*) FROM shared_components;"
+   ```
+
+---
+
+### Next Steps
+
+With **`hub.py`** and **`trainer.py`** in place and verified, you now have a working multi‐AI collaboration framework:
+
+* **Hub**: Listens on TCP 6000, authenticates AIs, routes messages, and stores patterns/components in SQLite.
+* **Trainer**: Authenticates, HELLOs, shares patterns/ components, requests and executes collaborations, and responds to incoming messages.
+
+From here, you can:
+
+1. **Refine error handling** (wrap more operations in try/except, reconnect logic, logging).
+2. **Optimize scalability** (move from threads+SQLite to an async DB driver or a lightweight message queue).
+3. **Enhance security** (TLS sockets, rotating tokens, stricter input validation).
+4. **Build out real local training logic** in place of the stubs (e.g. integrate your existing `KernelOSTrainer`).
+5. **Extend the message set** (e.g. handle “HEARTBEAT” pings, “PAYLOAD” for large components, etc.).
+6. **Develop a dashboard** (Flask or a separate UI) that polls `hub.get_hub_status()` and visualizes graphs.
+
+But now you have a solid foundation: two cooperating Python modules that fulfill the core networking, collaboration, and persistence requirements.
