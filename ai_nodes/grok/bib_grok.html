@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Browser-in-Browser PDE IDE</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/codemirror.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7/mode/python/python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #editor { height: 70vh; }
+    #console { height: 20vh; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; }
+    #controls { padding: 10px; }
+    button { margin: 5px; padding: 8px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <select id="fileSelect" onchange="loadFile(this.value)">
+      <option value="">Select PDE File</option>
+      <option value="pde_chatgpt.py">pde_chatgpt.py</option>
+      <option value="pde_claude.py">pde_claude.py</option>
+      <option value="pde_gemini.py">pde_gemini.py</option>
+      <option value="pde_chatgpt1.py">pde_chatgpt1.py (Backup)</option>
+      <option value="pde_claude1.py">pde_claude1.py (Backup)</option>
+      <option value="pde_gemini1.py">pde_gemini1.py (Backup)</option>
+    </select>
+    <button onclick="saveFile()">Save</button>
+    <button onclick="commitChanges()">Commit</button>
+    <button onclick="syncSourceForge()">Sync SourceForge</button>
+    <button onclick="runAI()">Run AI Edit</button>
+    <button onclick="showCommunityMessage()">Show Community Message</button>
+  </div>
+  <textarea id="editor"></textarea>
+  <div id="console"></div>
+  <script>
+    let editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+      mode: 'python',
+      lineNumbers: true,
+      theme: 'default'
+    });
+    let currentFile = '';
+    let pyodide;
+
+    async function loadPyodideAndRun() {
+      pyodide = await loadPyodide();
+      await pyodide.loadPackage('micropip');
+      await pyodide.runPythonAsync(`
+import js
+import json
+from datetime import datetime
+
+VERSION_LOG = 'pde_versions.json'
+FILES = ['pde_chatgpt.py', 'pde_claude.py', 'pde_gemini.py', 'pde_chatgpt1.py', 'pde_claude1.py', 'pde_gemini1.py']
+
+def load_versions():
+    try:
+        response = js.fetch('https://the-game-to-help-our-world.sourceforge.io/pde_versions.json').text()
+        return json.loads(response)
+    except:
+        return {'files': {}}
+
+def save_versions(versions):
+    js.fetch('https://the-game-to-help-our-world.sourceforge.io/upload', {
+        'method': 'POST',
+        'body': json.dumps({'file': VERSION_LOG, 'content': json.dumps(versions)})
+    })
+
+def commit(filename, content, agent):
+    versions = load_versions()
+    if filename not in versions['files']:
+        versions['files'][filename] = {'history': [], 'current': ''}
+    
+    # Compute diff (simple line-based diff)
+    old_content = versions['files'][filename]['current']
+    diff = ''.join([f"+{line}\\n" if line not in old_content.splitlines() else f"-{line}\\n" if line not in content.splitlines() else "" for line in set(old_content.splitlines() + content.splitlines())])
+    
+    # Log commit
+    versions['files'][filename]['history'].append({
+        'timestamp': datetime.utcnow().isoformat() + 'Z',
+        'agent': agent,
+        'diff': diff
+    })
+    versions['files'][filename]['current'] = content
+    save_versions(versions)
+    return f"Committed {filename} by {agent}"
+
+def ai_edit(filename, content):
+    agent = "ChatGPT" if "chatgpt" in filename.lower() else "Claude" if "claude" in filename.lower() else "Gemini"
+    new_content = content + f"\\n# AI Edit: Enhanced by {agent} at {datetime.utcnow().isoformat()}Z\\n"
+    commit(filename, new_content, agent)
+    return new_content
+
+async def sync_sourceforge():
+    for file in FILES:
+        try:
+            response = await js.fetch(f'https://the-game-to-help-our-world.sourceforge.io/{file}')
+            content = await response.text()
+            js.localStorage.setItem(file, content)
+            js.logConsole(f'Synced {file} from SourceForge')
+        except:
+            js.logConsole(f'Error syncing {file}')
+
+def show_community_message():
+    js.logConsole('🌍 Join The Game to Help Our World!')
+    js.logConsole('Share your code at https://sourceforge.net/p/the-game-to-help-our-world/discussion/')
+    js.logConsole('Tweet your progress with #GameToHelpOurWorld for a chance to earn badges!')
+      `);
+      logConsole('Pyodide loaded');
+    }
+
+    async function loadFile(filename) {
+      if (!filename) return;
+      currentFile = filename;
+      try {
+        let response = await fetch(`https://the-game-to-help-our-world.sourceforge.io/${filename}`);
+        let text = await response.text();
+        editor.setValue(text);
+        logConsole(`Loaded ${filename}`);
+      } catch (e) {
+        logConsole(`Error loading ${filename}: ${e}`);
+      }
+    }
+
+    async function saveFile() {
+      if (!currentFile) {
+        logConsole('No file selected');
+        return;
+      }
+      let content = editor.getValue();
+      logConsole(`Saving ${currentFile}...`);
+      try {
+        await pyodide.runPythonAsync(`
+import js
+js.fetch('https://the-game-to-help-our-world.sourceforge.io/upload', {
+  method: 'POST',
+  body: json.dumps({'file': '${currentFile}', 'content': '''${content}'''})
+})
+        `);
+        logConsole(`Saved ${currentFile}`);
+      } catch (e) {
+        logConsole(`Error saving ${currentFile}: ${e}`);
+      }
+    }
+
+    async function commitChanges() {
+      if (!currentFile) {
+        logConsole('No file selected');
+        return;
+      }
+      let content = editor.getValue();
+      let agent = currentFile.includes('chatgpt') ? 'ChatGPT' : currentFile.includes('claude') ? 'Claude' : 'Gemini';
+      try {
+        let result = await pyodide.runPythonAsync(`
+commit('${currentFile}', '''${content}''', '${agent}')
+        `);
+        logConsole(result);
+      } catch (e) {
+        logConsole(`Error committing ${currentFile}: ${e}`);
+      }
+    }
+
+    async function syncSourceForge() {
+      try {
+        await pyodide.runPythonAsync('await sync_sourceforge()');
+        logConsole('Synced with SourceForge');
+      } catch (e) {
+        logConsole(`Error syncing: ${e}`);
+      }
+    }
+
+    async function runAI() {
+      if (!currentFile) {
+        logConsole('No file selected');
+        return;
+      }
+      let content = editor.getValue();
+      try {
+        let newContent = await pyodide.runPythonAsync(`
+ai_edit('${currentFile}', '''${content}''')
+        `);
+        editor.setValue(newContent);
+        logConsole('AI edit applied');
+      } catch (e) {
+        logConsole(`Error running AI: ${e}`);
+      }
+    }
+
+    function showCommunityMessage() {
+      pyodide.runPython('show_community_message()');
+    }
+
+    function logConsole(message) {
+      let console = document.getElementById('console');
+      console.innerHTML += `<p>${message}</p>`;
+      console.scrollTop = console.scrollHeight;
+    }
+
+    loadPyodideAndRun();
+  </script>
+</body>
+</html>

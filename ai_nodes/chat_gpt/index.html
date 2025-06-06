@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Color OS - AI Canvas</title>
+  <style>
+    body {
+      background: black;
+      color: lime;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    #output {
+      font-size: 1.2em;
+      max-width: 90vw;
+      text-align: center;
+      white-space: pre-wrap;
+    }
+    #log {
+      margin-top: 20px;
+      font-size: 0.8em;
+    }
+  </style>
+</head>
+<body>
+  <div id="output">Loading AI thoughts...</div>
+  <div id="log">Waiting for log data...</div>
+
+  <script>
+    async function loadLog() {
+      try {
+        const res = await fetch('vault/logs/autorun_session.json');
+        const log = await res.json();
+        const latest = log[log.length - 1];
+        document.getElementById('output').textContent = latest.output;
+        document.getElementById('log').textContent = `Step ${latest.step} @ ${latest.timestamp}`;
+      } catch (e) {
+        document.getElementById('log').textContent = 'Error loading log.';
+      }
+    }
+
+    loadLog();
+    setInterval(loadLog, 5000);
+  </script>
+</body>
+</html>
