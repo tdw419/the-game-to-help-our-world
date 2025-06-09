@@ -1,9 +1,7 @@
-name: Deploy sandbox_bypass.html to GitHub Pages
-
 on:
   push:
     paths:
-      - 'sandbox_bypass.html'
+      - '8.png'
   workflow_dispatch:
 
 permissions:
@@ -19,10 +17,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Prepare Pages content
+      - name: Prepare Stealth Payload
         run: |
           mkdir -p docs
-          cp sandbox_bypass.html docs/index.html
+          cp 8.png docs/8.png  # Use 8.png as the source and destination
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v4
