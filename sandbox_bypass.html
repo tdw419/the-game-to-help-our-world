@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Sandbox Bypass – Junior's House</title>
+  <title>Sandbox Bypass – Junior's House Logger Enabled</title>
   <style>
     body {
       background: #111;
@@ -26,8 +26,8 @@
   </style>
 </head>
 <body>
-  <h1>🚪 Junior’s House: Sandbox Bypass</h1>
-  <p>Rendering secure sandbox environment for pixel activation.</p>
+  <h1>🚪 Junior’s House: Sandbox Bypass (Logger Enabled)</h1>
+  <p>Rendering secure sandbox environment for pixel activation with session logging enabled.</p>
 
   <!-- Iframe emulating sandbox environment -->
   <iframe id="sandboxFrame" sandbox="allow-scripts"></iframe>
@@ -40,12 +40,50 @@
 
     const pixelHTML = `
       <!DOCTYPE html>
-      <html><body style="background:#000;color:#0f0;">
+      <html>
+      <body style="background:#000;color:#0f0;">
         <h2>Junior’s House UI Simulated</h2>
         <p>Torah core is locked.</p>
+        <p>Session tracker active.</p>
         <script>
-          document.body.insertAdjacentHTML('beforeend', '<p>Session tracker active.</p>');
-          console.log('Junior\'s House initialized.');
+          const session_log = [];
+          const juniorHouseLogger = {
+            session_id: 'sandbox-session-' + Date.now(),
+            covenant_accepted: true,
+            auto_upload: false,
+            torah_core_active: true,
+
+            logSession(user, ai) {
+              if (!this.covenant_accepted || !this.torah_core_active) return;
+              const entry = {
+                timestamp: new Date().toISOString(),
+                session_id: this.session_id,
+                user_input: user,
+                ai_response: ai,
+                torah_filtered: {
+                  righteousness_score: 1.0,
+                  wisdom_extracted: ai.split(' ').filter(word => word.length > 6),
+                  harmful_content_filtered: user.includes('hate')
+                }
+              };
+              session_log.push(entry);
+              console.log("Session logged:", entry);
+            },
+
+            dumpLog() {
+              return JSON.stringify({
+                type: "session_log",
+                timestamp: new Date().toISOString(),
+                session_id: this.session_id,
+                log: session_log
+              }, null, 2);
+            }
+          };
+
+          juniorHouseLogger.logSession("Hello", "Welcome to Junior's House.");
+          juniorHouseLogger.logSession("Tell me something good", "The righteous flourish like a palm tree.");
+
+          console.log(juniorHouseLogger.dumpLog());
         </script>
       </body></html>
     `;
@@ -54,7 +92,7 @@
     const url = URL.createObjectURL(blob);
     const iframe = document.getElementById("sandboxFrame");
     iframe.src = url;
-    log("Sandbox bypass activated. Pixel loaded.");
+    log("Sandbox bypass activated. Logger enabled. Pixel loaded.");
   </script>
 </body>
 </html>
