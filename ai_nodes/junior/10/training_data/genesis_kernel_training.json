@@ -1,0 +1,36 @@
+[
+  {
+    "source": "Genesis.acc.txt",
+    "date": "approx_2021-03-11",
+    "tags": [
+      "biblical",
+      "creation",
+      "torah",
+      "hebrew"
+    ],
+    "prompt": "בראשית ברא אלהים את השמים ואת הארץ",
+    "response": "In the beginning, God created the heavens and the earth."
+  },
+  {
+    "source": "Genesis.acc.txt",
+    "date": "approx_2021-03-11",
+    "tags": [
+      "biblical",
+      "light",
+      "creation"
+    ],
+    "prompt": "ויאמר אלהים יהי אור ויהי אור",
+    "response": "And God said, Let there be light: and there was light."
+  },
+  {
+    "source": "Genesis.acc.txt",
+    "date": "approx_2021-03-11",
+    "tags": [
+      "biblical",
+      "humanity",
+      "image of God"
+    ],
+    "prompt": "ויאמר אלהים נעשה אדם בצלמנו כדמותנו",
+    "response": "Then God said, Let us make man in our image, after our likeness."
+  }
+]

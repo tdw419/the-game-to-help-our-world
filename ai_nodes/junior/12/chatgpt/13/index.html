@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Junior AI Node – PDE</title>
+  <style>
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+      text-align: center;
+      padding: 20px;
+    }
+    canvas {
+      background: #111;
+      border: 2px solid #0f0;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Junior AI Node – Pixel Display Engine</h1>
+  <p id="status">Initializing PDE...</p>
+  <canvas id="pdeCanvas" width="256" height="256"></canvas>
+
+  <script>
+    const canvas = document.getElementById("pdeCanvas");
+    const ctx = canvas.getContext("2d");
+    const status = document.getElementById("status");
+
+    status.textContent = "PDE ready. Drawing grid...";
+
+    function drawGrid() {
+      const cellSize = 16;
+      for (let y = 0; y < canvas.height; y += cellSize) {
+        for (let x = 0; x < canvas.width; x += cellSize) {
+          ctx.fillStyle = ((x + y) % 32 === 0) ? "#0f0" : "#030";
+          ctx.fillRect(x, y, cellSize - 2, cellSize - 2);
+        }
+      }
+    }
+
+    drawGrid();
+  </script>
+</body>
+</html>

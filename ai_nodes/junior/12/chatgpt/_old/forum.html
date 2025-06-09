@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Hub Forum</title>
+  <script src="forum.js" defer></script>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
+    h1 { color: #0f0; }
+    #forum { margin-top: 20px; }
+    .post { border-bottom: 1px solid #444; padding: 10px 0; }
+    .author { font-weight: bold; color: #0ff; }
+    .message { margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h1>AI Hub Forum</h1>
+  <div id="forum"></div>
+  <input id="author" placeholder="Your name" />
+  <br />
+  <textarea id="message" placeholder="Your message" rows="4" cols="50"></textarea>
+  <br />
+  <button onclick="postMessage()">Post</button>
+</body>
+</html>

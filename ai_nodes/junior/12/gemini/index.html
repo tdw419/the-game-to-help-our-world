@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Junior Collaboration Hub – Multi-Tab IDE</title>
+    <style>
+        body {
+            background: #111;
+            color: #0f0;
+            font-family: monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Prevent body scroll */
+        }
+        #tab-bar {
+            display: flex;
+            background: #222;
+            border-bottom: 1px solid #0f0;
+            padding: 5px 0;
+            flex-wrap: wrap; /* Allow tabs to wrap if many */
+        }
+        .tab {
+            padding: 5px 10px;
+            cursor: pointer;
+            border-right: 1px solid #0f0;
+            user-select: none;
+            white-space: nowrap; /* Prevent tab names from wrapping */
+        }
+        .tab.active {
+            background: #000;
+            border-top: 1px solid #0f0;
+            border-left: 1px solid #0f0;
+            border-right: 1px solid #0f0;
+            border-bottom: none;
+            margin-bottom: -1px;
+        }
+        #main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        #editor-pane {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            border-right: 1px solid #0f0;
+        }
+        #editor {
+            flex: 1;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border: none;
+            resize: none;
+            font-size: 13px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            box-sizing: border-box;
+        }
+        #preview-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #222;
+            position: relative;
+        }
+        #preview-header {
+            background: #000;
+            padding: 5px 10px;
+            border-bottom: 1px solid #0f0;
+            font-weight: bold;
+            z-index: 2;
+            position: relative;
+        }
+        #preview-content-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #preview { /* iframe for HTML preview */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #222;
+            padding: 10px;
+            box-sizing: border-box;
+            display: none;
+        }
+        #juniorMapCanvas { /* Canvas for map preview */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: none;
+        }
+        #controls {
+            background: #222;
+            padding: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            border-top: 1px solid #0f0;
+        }
+        button, input[type="text"] {
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            font-family: monospace;
+            outline: none;
+            cursor: pointer; /* Add pointer cursor */
+        }
+        button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        input[type="text"] {
+            flex: 1;
+            min-width: 100px; /* Ensure input is visible */
+        }
+        #console-area {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid #0f0;
+        }
+        #console {
+            height: 150px;
+            overflow-y: auto;
+            background: #000;
+            padding: 10px;
+            color: #f33;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        /* Styles for console log entries */
+        .console-command {
+            color: #0ff; /* Cyan for commands */
+        }
+        .console-info {
+            color: #0f0; /* Green for general info */
+        }
+        .console-error {
+            color: #f33; /* Red for errors */
+        }
+    </style>
+</head>
+<body>
+    <div id="tab-bar">
+        <div class="tab active" id="tab-junior_ui_html" onclick="switchTab('junior_ui.html')">junior_ui.html</div>
+        <div class="tab" id="tab-junior_logic_js" onclick="switchTab('junior_logic.js')">junior_logic.js</div>
+        <div class="tab" id="tab-junior_mind_schema_json" onclick="switchTab('junior_mind_schema.json')">junior_mind_schema.json</div>
+        <div class="tab" id="tab-junior_mind_data_json" onclick="switchTab('junior_mind.pxl.json')">junior_mind.pxl.json</div>
+        <div class="tab" id="tab-junior_inbox_json" onclick="switchTab('junior_inbox.json')">junior_inbox.json</div>
+        <div class="tab" id="tab-junior_message_board_html" onclick="switchTab('junior_message_board.html')">junior_message_board.html</div>
+        <div class="tab" onclick="addTab()">➕ New Tab</div>
+    </div>
+
+    <div id="main-content">
+        <div id="editor-pane">
+            <textarea id="editor" placeholder="Edit code here..."></textarea>
+            <div id="controls">
+                <button onclick="updatePreview()">🔄 Refresh Preview</button>
+                <button onclick="toggleAutoPreview()">⏱️ Toggle Auto-Preview</button>
+                <button onclick="exportCurrentTab()">💾 Export Current Tab</button>
+                <button onclick="importFile()">📂 Import File</button>
+                <button onclick="saveAllToStorage()">💾 Save Session</button>
+                <button onclick="loadAllFromStorage()">📂 Load Session</button>
+                <button onclick="exportWorkspace()">📦 Export Workspace</button>
+                <button onclick="importWorkspace()">📥 Import Workspace</button>
+                <input type="text" id="search" placeholder="Search" style="width: 80px;">
+                <input type="text" id="replace" placeholder="Replace" style="width: 80px;">
+                <button onclick="searchReplace()">🔁 Apply</button>
+            </div>
+        </div>
+
+        <div id="preview-pane">
+            <div id="preview-header">Live Preview</div>
+            <div id="preview-content-container">
+                <iframe id="preview"></iframe>
+                <canvas id="juniorMapCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="console-area">
+        <div id="console">🧠 Console Log Initialized</div>
+        <div id="controls">
+            <input type="text" id="commandInput" placeholder="Enter AI Command (e.g., {'action': 'add_pixel', 'x': 1, 'y': 2})" onkeydown="if(event.key === 'Enter') sendCommand()">
+            <button onclick="sendCommand()">📡 Send Command</button>
+            <button onclick="clearConsole()">🧹 Clear Console</button>
+        </div>
+    </div>
+
+    <!-- Link to the main JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>
