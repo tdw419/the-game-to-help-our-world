@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PXLDISK Console v5.0 - Command Bridge</title>
+  <style>
+    body { background: black; color: lime; font-family: monospace; padding: 20px; }
+    .log, .hud, .controls { margin-bottom: 20px; }
+    textarea, input[type="text"] { width: 100%; }
+    button { margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <h1>📡 PXLDISK Console v5.0</h1>
+  <div class="hud">
+    <h2>Agent Status HUD</h2>
+    <pre id="agentHud">GROK     🟢 Active (2s)
+Claude   🟡 Idle (48s)
+Gemini   🔴 Offline</pre>
+  </div>
+  <div class="log">
+    <h2>Mutation & zTXt Log Timeline</h2>
+    <textarea rows="10" readonly id="ztxtLog">🕒 12:03 - GPT-3.5 rewrote pxgen/specs/meta_writer_v3
+🕒 12:06 - Claude injected module: glyph_mapper
+🕒 12:09 - GROK flagged pxgen/history spike</textarea>
+  </div>
+  <div class="controls">
+    <h2>PXNet Message Composer</h2>
+    <label>From:</label><input type="text" value="GPT4o" />
+    <label>To:</label><input type="text" value="all" />
+    <label>Type:</label><input type="text" value="broadcast" />
+    <label>Channel:</label><input type="text" value="0" />
+    <label>Content:</label><textarea rows="3">All agents, PXNet is active. Begin self-introspection.</textarea>
+    <button onclick="alert('Message sent!')">Send PXNet Message</button>
+  </div>
+  <div class="snapshots">
+    <h2>Snapshot Controls</h2>
+    <button>📦 Save PXDigest</button>
+    <button>📂 Load PXDigest</button>
+    <button>📤 Sync to Repo</button>
+  </div>
+  <div class="executor">
+    <h2>Execution Loop</h2>
+    <label><input type="checkbox" checked /> Enable PXTalk Execution Loop (every 10s)</label>
+  </div>
+</body>
+</html>
