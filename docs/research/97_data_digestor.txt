@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PXDigest Lab</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; background: #111; color: #eee; }
+    canvas { border: 1px solid #444; margin-top: 1rem; }
+    .controls { margin-top: 1rem; }
+    .controls button { margin-right: 1rem; }
+    .metadata { font-size: 0.9rem; margin-top: 0.5rem; color: #ccc; }
+  </style>
+</head>
+<body>
+  <h1>PXDigest Lab</h1>
+  <input type="file" id="fileInput" />
+  <div class="controls">
+    <button onclick="mode1_reassemble()">🔁 Mode 1: Reassemble</button>
+    <button onclick="mode2_visualDigest()">🎨 Mode 2: Visual Digest</button>
+    <button onclick="mode3_bootDigest()">🔥 Mode 3: 4-Pixel Boot ID</button>
+    <button onclick="downloadReconstructedFile()">⬇️ Export Original</button>
+  </div>
+  <canvas id="pxCanvas"></canvas>
+  <div class="metadata" id="metadata"></div>
+
+  <script>
+    let fileBuffer = null;
+    let originalBytes = null;
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        fileBuffer = event.target.result;
+        originalBytes = new Uint8Array(fileBuffer);
+        document.getElementById('metadata').textContent = `Loaded ${file.name} (${originalBytes.length} bytes)`;
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    function mode1_reassemble() {
+      if (!originalBytes) return;
+      const canvas = document.getElementById('pxCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const totalPixels = Math.ceil(originalBytes.length / 3);
+      const w = Math.ceil(Math.sqrt(totalPixels));
+      const h = Math.ceil(totalPixels / w);
+      canvas.width = w;
+      canvas.height = h;
+
+      const imgData = ctx.createImageData(w, h);
+      let j = 0;
+      for (let i = 0; i < originalBytes.length; i += 3) {
+        imgData.data[j++] = originalBytes[i];     // R
+        imgData.data[j++] = originalBytes[i+1] || 0; // G
+        imgData.data[j++] = originalBytes[i+2] || 0; // B
+        imgData.data[j++] = 255;                // A
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function mode2_visualDigest() {
+      // Placeholder: Same as reassemble for now
+      mode1_reassemble();
+      document.getElementById('metadata').textContent += ' | Visual mode pending enhancements';
+    }
+
+    function mode3_bootDigest() {
+      if (!originalBytes) return;
+      crypto.subtle.digest("SHA-256", fileBuffer).then((hash) => {
+        const hashBytes = new Uint8Array(hash);
+        const bootRGBs = [0, 3, 6, 9].map(i => [hashBytes[i], hashBytes[i+1], hashBytes[i+2]]);
+
+        const canvas = document.getElementById('pxCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 4;
+        canvas.height = 1;
+        const imgData = ctx.createImageData(4, 1);
+        let j = 0;
+        for (let i = 0; i < bootRGBs.length; i++) {
+          const [r, g, b] = bootRGBs[i];
+          imgData.data[j++] = r;
+          imgData.data[j++] = g;
+          imgData.data[j++] = b;
+          imgData.data[j++] = 255;
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        document.getElementById('metadata').textContent += ` | Boot RGBs: ${JSON.stringify(bootRGBs)}`;
+      });
+    }
+
+    function downloadReconstructedFile() {
+      if (!originalBytes) return;
+      const blob = new Blob([originalBytes], { type: 'application/octet-stream' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'reconstructed.bin';
+      a.click();
+    }
+  </script>
+</body>
+</html>
