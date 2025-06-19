@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Junior's House Compiler</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #0a0a0a;
+      color: #00ff88;
+      margin: 0;
+      padding: 20px;
+    }
+    .panel {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      background: #004400;
+      color: #00ff88;
+      border: 1px solid #00ff88;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #006600;
+    }
+    iframe {
+      width: 100%;
+      height: 80vh;
+      border: 2px solid #00ff88;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Junior's House Compiler</h1>
+  <div class="panel">
+    <input type="file" id="importHTML" accept=".html">
+    <button onclick="runOptimization()">🧼 Optimize for Framebuffer</button>
+    <button onclick="exportHTML()">💾 Export Optimized HTML</button>
+  </div>
+  <iframe id="previewFrame"></iframe>
+
+  <script>
+    let rawHTML = '';
+    let optimizedHTML = '';
+
+    document.getElementById('importHTML').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        rawHTML = evt.target.result;
+        document.getElementById('previewFrame').srcdoc = rawHTML;
+      };
+      reader.readAsText(file);
+    });
+
+    function runOptimization() {
+      const frame = document.getElementById('previewFrame');
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      optimizeForFramebuffer(doc);
+      optimizedHTML = '<!DOCTYPE html>' + doc.documentElement.outerHTML;
+      frame.srcdoc = optimizedHTML;
+    }
+
+    function exportHTML() {
+      const blob = new Blob([optimizedHTML], { type: 'text/html' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'fb_render.html';
+      link.click();
+    }
+
+    function optimizeForFramebuffer(doc) {
+      // Remove all text shadows and box shadows
+      const all = doc.querySelectorAll('*');
+      for (const el of all) {
+        const style = getComputedStyle(el);
+        if (style.textShadow !== 'none') el.style.textShadow = 'none';
+        if (style.boxShadow !== 'none') el.style.boxShadow = 'none';
+
+        // Remove transparency
+        if (style.backgroundColor.includes('rgba')) {
+          const solid = style.backgroundColor.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, 'rgb($1,$2,$3)');
+          el.style.backgroundColor = solid;
+        }
+        if (style.color.includes('rgba')) {
+          const solid = style.color.replace(/rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/, 'rgb($1,$2,$3)');
+          el.style.color = solid;
+        }
+
+        // Remove complex animations
+        el.style.animation = 'none';
+        el.style.transition = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

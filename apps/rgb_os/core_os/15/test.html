@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Windows Direct Test</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(45deg, #000080, #4169E1, #87CEEB);
+            color: white;
+            font-family: Arial;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        .title { font-size: 72px; margin-bottom: 20px; text-shadow: 3px 3px 6px rgba(0,0,0,0.8); }
+        .subtitle { font-size: 36px; margin-bottom: 40px; }
+        .clock { font-size: 48px; margin: 20px 0; text-shadow: 0 0 20px white; }
+        .counter { font-size: 96px; color: #FFD700; text-shadow: 0 0 30px #FFD700; }
+        .stats { position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="stats">
+        <div id="live-time">Live: 0s</div>
+        <div id="live-frames">Frames: 0</div>
+        <div>Windows Direct Render</div>
+    </div>
+    <div class="title">🪟 WINDOWS DIRECT</div>
+    <div class="subtitle">HTML → Native Screen</div>
+    <div class="clock" id="clock">00:00:00</div>
+    <div class="counter"><span class="live-counter">0</span></div>
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>

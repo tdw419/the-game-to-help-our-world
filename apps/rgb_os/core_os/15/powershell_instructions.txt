@@ -1,0 +1,56 @@
+You're seeing this error because **PowerShell's execution policy is set to restrict script execution** on your system. By default, many versions of Windows prevent `.ps1` scripts from being run for security reasons.
+
+---
+
+## 🔧 Solution: Temporarily Allow Scripts
+
+Here’s how you can **enable script execution for your session**:
+
+### ✅ Step 1: Open PowerShell as Administrator
+
+1. Press `Win + X` and choose **Windows PowerShell (Admin)** or **Terminal (Admin)**.
+2. Accept the User Account Control (UAC) prompt.
+
+---
+
+### ✅ Step 2: Allow Script Execution Temporarily
+
+Run this command:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+Then, immediately run your script:
+
+```powershell
+C:\zion\wwwroot\projects\the-game-to-help-our-world\apps\rgb_os\core_os\15\windows_direct.ps1
+```
+
+This bypasses the restriction for **this session only**, making it safer.
+
+---
+
+## 🔒 Permanent Options (Optional)
+
+If you want to enable scripts permanently, you can choose:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+* **RemoteSigned** means:
+
+  * Scripts you write can run.
+  * Scripts downloaded from the internet must be signed by a trusted publisher.
+
+---
+
+## 📄 Learn More
+
+You can read more at the link mentioned in your error:
+[https://go.microsoft.com/fwlink/?LinkID=135170](https://go.microsoft.com/fwlink/?LinkID=135170)
+
+---
+
+Let me know if you'd like to script this permission setting or embed a workaround directly into `windows_direct.ps1`.
