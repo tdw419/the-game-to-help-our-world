@@ -1,0 +1,7 @@
+; zTXt/PXTalk Interpreter
+SET_PX 0x5000 0x00     ; Initialize memory
+PX_WRITE 0x6000 "Interpreter Loaded"
+PX_EXEC 0x7000         ; Load pxexecutor.pxmod
+PX_EXEC 0x8000         ; Load PX_UPGRADE.pxexe
+LOG "Runtime Active"
+HALT

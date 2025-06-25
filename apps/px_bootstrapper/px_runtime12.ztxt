@@ -1,0 +1,9 @@
+zTXt::pxruntime.ztxt [INTERPRETER] Name: PXRuntime Version: 5.0
+
+[MEMORY] Grid: 1024x768xRGBA Modules: /pxmodules/ Registers: R1=0, R2=0, R3=0, R4=0 PC: 0 Running: True
+
+[OPCODES] MOV R1 R2 ; Move R2 to R1 SET_PX X Y RGBA ; Set pixel at (X,Y) PX_WRITE FILE DATA ; Write to /pxmodules/ PX_RELOAD FILE ; Hot-reload file PX_EXEC FILE ; Execute file LOG MSG ; Log to PX_UPGRADE_LOG.zTXT PX_EXPORT FILE ; Serialize to disk PX_INPUT TYPE ; Get keyboard/mouse input HLT ; Halt
+
+[EXECUTE] WHILE Running LOAD_SCRIPT R1 [PC] PARSE R1 IF R1 == "MOV" LOAD_ARGS R2 R3 MOV R2 R3 IF R1 == "SET_PX" LOAD_ARGS R2 R3 R4 SET_PX R2 R3 R4 IF R1 == "PX_WRITE" LOAD_ARGS R2 R3 PX_WRITE R2 R3 LOG "Wrote {R2}" IF R1 == "PX_RELOAD" LOAD_ARGS R2 PX_RELOAD R2 LOG "Reloaded {R2}" IF R1 == "PX_EXEC" LOAD_ARGS R2 PX_EXEC R2 LOG "Executed {R2}" IF R1 == "LOG" LOAD_ARGS R2 LOG R2 IF R1 == "PX_EXPORT" LOAD_ARGS R2 PX_EXPORT R2 LOG "Exported {R2}" IF R1 == "PX_INPUT" LOAD_ARGS R2 PX_INPUT R2 LOG "Input {R2}" IF R1 == "HLT" SET Running False INCREMENT PC ENDWHILE
+
+[INIT] LOAD pxboot.ztxt RUN

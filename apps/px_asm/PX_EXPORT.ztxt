@@ -1,0 +1,5 @@
+PX_WRITE 0xD000 "Exporting"
+SET_PX 0xE000 0x0100   ; Version 1.0
+PX_EXEC 0xF000         ; PX_REPLICATE
+LOG "PXOS Exported"
+HALT

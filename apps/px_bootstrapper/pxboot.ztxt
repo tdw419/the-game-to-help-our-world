@@ -1,0 +1,5 @@
+zTXt::pxboot.ztxt [BOOTLOADER] Name: PXBoot Version: 1.0
+
+[INIT] SET_MEMORY 1024x768xRGBA MOUNT /pxmodules/ LOAD_CONFIG PXOS.config.json
+
+[LOAD] MOV R1 CONFIG.entry PX_EXEC R1 ; PX_UPGRADE.pxexe LOG "Booted {R1}"

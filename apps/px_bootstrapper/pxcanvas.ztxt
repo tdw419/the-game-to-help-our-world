@@ -1,0 +1,35 @@
+zTXt::pxcanvas.ztxt
+[RENDERER]
+Name: PXCanvas
+Version: 1.0
+
+[FONT]
+LOAD pxvm_font.png ; 8x8 glyphs, pixel-encoded
+
+[RENDER]
+WHILE True
+    FOR Y 0 768
+        FOR X 0 1024
+            LOAD_PIXEL R1 X Y
+            SET_PX X Y R1
+        ENDFOR
+    ENDFOR
+    RENDER_TEXT PX_UPGRADE_LOG.zTXT 10 10
+    TICK 30 ; 30 FPS
+ENDWHILE
+
+[RENDER_TEXT]
+LOAD_ARGS R1 X Y
+FOR CHAR IN R1
+    LOAD_GLYPH R2 CHAR
+    FOR GY 0 8
+        FOR GX 0 8
+            IF R2[GX,GY] == 1
+                SET_PX (X+GX) (Y+GY) 0xFFFFFFFF
+            ELSE
+                SET_PX (X+GX) (Y+GY) 0x000000FF
+            ENDIF
+        ENDFOR
+    ENDFOR
+    INCREMENT X 8
+ENDFOR
