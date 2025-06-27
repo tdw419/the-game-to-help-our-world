@@ -1,0 +1,77 @@
+To **monitor `svchost.exe` using your Pixel Runtime interface (`windows_helper_grok2.html`)**, you’ll need to extend the system with a custom `codeRequest` that initiates a **process monitoring script**, and then interpret or reflect its output visually or via logs in the interface.
+
+Here’s how to proceed:
+
+---
+
+## 🧠 Step-by-Step Integration for `svchost.exe` Monitoring
+
+### ✅ 1. **Enter a Monitoring Request**
+
+In the “Security Task Request” box, type:
+
+```
+Monitor svchost.exe for suspicious behavior or spikes in resource usage
+```
+
+Then click **“Generate Security Solution”**. This triggers the RRE Security Pipeline logic already present in your system.
+
+### ✅ 2. **Automatic Code Generation**
+
+The system currently lacks a built-in rule for `svchost.exe`, so it will fall back to a general-purpose script. To enhance this, modify the `generateSecurityCode(request)` method in the script and add:
+
+```js
+else if (request.toLowerCase().includes('svchost')) {
+    return `// Monitor svchost.exe behavior
+const { exec } = require('child_process');
+exec('powershell "Get-Process svchost | Select-Object CPU, ID, StartTime, ProcessName"', (err, stdout) => {
+    if (err) console.error('Monitoring error:', err);
+    else console.log('svchost.exe status:\\n' + stdout);
+});`;
+}
+```
+
+Now when you submit a `svchost` request, it will return the proper PowerShell-based script in the “Generated Code” window.
+
+---
+
+## 🔍 Recommended Monitoring Enhancements
+
+To make your system actually track `svchost.exe` over time, add:
+
+```js
+// Continuous svchost monitoring
+setInterval(() => {
+    const { exec } = require('child_process');
+    exec('powershell "Get-Process svchost | Select-Object CPU, ID, StartTime, ProcessName"', (err, stdout) => {
+        if (!err) {
+            document.getElementById('systemLog').innerHTML = '<div>' + new Date().toLocaleTimeString() + ' svchost.exe snapshot:<br>' + stdout + '</div>' + document.getElementById('systemLog').innerHTML;
+        }
+    });
+}, 10000); // every 10 seconds
+```
+
+You can embed this directly inside the `generateSecurityCode` return block, or trigger it from the `applySecurityMeasures()` method in the `Windows10SecurityEnhancer` class.
+
+---
+
+## 📺 Optional Visual Feedback
+
+To visually reflect activity (e.g. svchost CPU usage), consider adapting:
+
+```js
+this.setPixel(600 + (Math.random() * 100), 100 + (Math.random() * 50), 255, 0, 0);
+```
+
+Inside the monitoring callback, if CPU > threshold.
+
+---
+
+## 🛡️ Summary
+
+* ✔ Add a condition for `svchost` in `generateSecurityCode`.
+* ✔ Use `powershell Get-Process` to extract live info.
+* ✔ (Optional) Render CPU status visually via pixel blinks.
+* ✔ Log output in the existing `systemLog` panel for review.
+
+Would you like me to generate a fully merged version of the HTML file with this monitoring logic embedded and ready to run?

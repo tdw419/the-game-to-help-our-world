@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PX Native Disk I/O Optimizer</title>
+  <style>
+    body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
+    h1 { color: #0ff; text-align: center; }
+    .log { background: #111; padding: 10px; border: 1px solid #333; height: 300px; overflow-y: auto; font-size: 12px; }
+    button { background: #002200; border: 1px solid #0f0; color: #0f0; padding: 6px 12px; cursor: pointer; margin: 5px; }
+    canvas { display: block; margin: 20px auto; background: #000; image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+  <h1>🔧 PX Native Disk I/O Optimizer</h1>
+  <button id="startMonitor">Start Disk I/O Monitor</button>
+  <button id="optimize">Apply Disk Optimizations</button>
+  <canvas id="diskCanvas" width="512" height="128"></canvas>
+  <div class="log" id="logPanel">// Disk I/O logs will appear here</div>
+
+  <script>
+    const logPanel = document.getElementById('logPanel');
+    const ctx = document.getElementById('diskCanvas').getContext('2d');
+    const width = 512, height = 128;
+
+    function log(msg) {
+      const time = new Date().toLocaleTimeString();
+      logPanel.innerHTML = `<div>[${time}] ${msg}</div>` + logPanel.innerHTML;
+    }
+
+    function drawPixelActivity(index, read, write) {
+      const x = index % width;
+      const y = Math.floor(index / width);
+      const r = Math.min(255, read / 1000000);
+      const g = Math.min(255, write / 1000000);
+      ctx.fillStyle = `rgb(${r},${g},0)`;
+      ctx.fillRect(x, y, 1, 1);
+    }
+
+    async function fetchDiskIO() {
+      const { exec } = require('child_process');
+      exec('powershell "Get-Process | Sort-Object IOReadBytes -Descending | Select-Object -First 10 Name, IOReadBytes, IOWriteBytes"', (err, stdout) => {
+        if (err) return log('Error fetching I/O: ' + err);
+        const lines = stdout.trim().split('\n').slice(2);
+        lines.forEach((line, i) => {
+          const parts = line.trim().split(/\s+/);
+          const name = parts[0];
+          const read = parseInt(parts[1]);
+          const write = parseInt(parts[2]);
+          log(`${name} R:${read} W:${write}`);
+          drawPixelActivity(i, read, write);
+        });
+      });
+    }
+
+    async function applyOptimizations() {
+      const { exec } = require('child_process');
+      log('Applying Windows disk tuning...');
+      exec('sc stop SysMain');
+      exec('sc config SysMain start= disabled');
+      exec('sc stop WSearch');
+      exec('sc config WSearch start= disabled');
+      exec('Cleanmgr /sagerun:1');
+      log('✔️ Services tuned: SysMain, WSearch. Cleanup triggered.');
+    }
+
+    document.getElementById('startMonitor').onclick = () => {
+      log('📊 Disk I/O monitoring started');
+      setInterval(fetchDiskIO, 10000);
+    };
+
+    document.getElementById('optimize').onclick = applyOptimizations;
+  </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PXOS Defender v2</title>
+    <style>
+        body { background: #111; color: #eee; font-family: monospace; padding: 10px; }
+        canvas { border: 1px solid lime; image-rendering: pixelated; display: block; margin-bottom: 10px; }
+        textarea { width: 100%; height: 80px; background: #222; color: #0f0; border: 1px solid #0f0; margin-bottom: 10px; }
+        #log { max-height: 150px; overflow-y: auto; background: #222; color: #0f0; padding: 5px; border: 1px solid #0f0; }
+        button { background: #333; color: #0f0; border: 1px solid #0f0; padding: 5px; margin: 2px; }
+    </style>
+</head>
+<body>
+<h2>PXOS Defender v2</h2>
+<canvas id="mirror" width="256" height="256"></canvas>
+<textarea id="reflexRules" placeholder="Enter zTXt reflex rules here...">WHEN 10 10 = 255 0 0 → alert:Red pixel detected
+WHEN 20 20 = 0 255 0 → post:/alert green pixel</textarea>
+<div>
+    <button onclick="startScreenMirror()">Mirror Screen</button>
+    <button onclick="loadImage()">Load Screenshot</button>
+    <button onclick="applyReflex()">Apply Reflex</button>
+    <button onclick="autoApplyLoop()">Auto Reflex Loop</button>
+</div>
+<div id="log"></div>
+<script>
+const canvas = document.getElementById('mirror');
+const ctx = canvas.getContext('2d');
+const log = document.getElementById('log');
+let autoLoop = false;
+
+function logger(msg) {
+  const t = new Date().toISOString();
+  log.innerHTML += `&gt; ${t}: ${msg}<br>`;
+  log.scrollTop = log.scrollHeight;
+  localStorage.setItem("PXLogs", log.innerHTML);
+}
+
+function startScreenMirror() {
+  navigator.mediaDevices.getDisplayMedia({ video: true }).then(stream => {
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.play();
+    const draw = () => {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (autoLoop) applyReflex();
+      requestAnimationFrame(draw);
+    };
+    draw();
+    logger("Screen mirror started.");
+  }).catch(err => logger("Mirror error: " + err));
+}
+
+function loadImage() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      logger("Loaded screenshot image.");
+    };
+    img.src = URL.createObjectURL(file);
+  };
+  input.click();
+}
+
+function applyReflex() {
+  const rules = document.getElementById("reflexRules").value.split("\n");
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  for (let rule of rules) {
+    const m = rule.match(/WHEN (\d+) (\d+) = (\d+|\*) (\d+|\*) (\d+|\*) → (\w+):(.+)/);
+    if (m) {
+      const [_, x, y, r, g, b, action, param] = m;
+      const ix = (+y * canvas.width + (+x)) * 4;
+      const [pr, pg, pb] = [imgData.data[ix], imgData.data[ix + 1], imgData.data[ix + 2]];
+      const rMatch = (r === '*' || pr == r);
+      const gMatch = (g === '*' || pg == g);
+      const bMatch = (b === '*' || pb == b);
+      if (rMatch && gMatch && bMatch) {
+        logger(`Reflex matched at (${x},${y}) → ${action}:${param}`);
+        if (action === 'alert') alert(param);
+        if (action === 'post') fetch(param, {method: 'POST'});
+        if (action === 'click') simulateClick(x, y);
+        if (action === 'set') setPixel(parseInt(x), parseInt(y), ...param.split(' ').map(Number));
+      }
+    }
+  }
+}
+
+function simulateClick(x, y) {
+  logger(`Simulated click at (${x}, ${y})`);
+  // Placeholder for backend integration
+}
+
+function setPixel(x, y, r, g, b) {
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const index = (y * canvas.width + x) * 4;
+  [imgData.data[index], imgData.data[index + 1], imgData.data[index + 2]] = [r, g, b];
+  ctx.putImageData(imgData, 0, 0);
+  logger(`Set pixel at (${x}, ${y}) → (${r}, ${g}, ${b})`);
+}
+
+function autoApplyLoop() {
+  autoLoop = !autoLoop;
+  logger(autoLoop ? "Auto Reflex Loop: ON" : "Auto Reflex Loop: OFF");
+}
+</script>
+</body>
+</html>
