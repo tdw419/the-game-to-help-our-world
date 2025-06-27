@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PXOS QR Code Generator</title>
+    <!-- Your excellent custom CSS for the PXOS feel is retained -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- QR Code Library - qrcode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        /* Your original, excellent CSS styles are retained */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            color: #00ff88;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr; /* Stack columns on smaller screens */
+            }
+        }
+        .panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            margin-bottom: 20px;
+        }
+        .generator-panel { border-color: #ff00ff; }
+        .preview-panel { border-color: #ffff00; }
+        input[type="file"], input[type="text"], select, textarea {
+            background: #000;
+            border: 1px solid #333;
+            color: #00ff88;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        button {
+            background: linear-gradient(45deg, #003300, #004400);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px 0;
+            transition: all 0.3s;
+            width: 100%;
+            font-size: 14px;
+        }
+        button:hover {
+            background: linear-gradient(45deg, #005500, #007700);
+            box-shadow: 0 0 10px #00ff00;
+        }
+        .generator-btn { border-color: #ff00ff; color: #ff00ff; background: linear-gradient(45deg, #330033, #440044); }
+        .generator-btn:hover { background: linear-gradient(45deg, #550055, #770077); box-shadow: 0 0 10px #ff00ff; }
+        .preview-btn { border-color: #ffff00; color: #ffff00; background: linear-gradient(45deg, #333300, #444400); }
+        .preview-btn:hover { background: linear-gradient(45deg, #555500, #777700); box-shadow: 0 0 10px #ffff00; }
+        #qrCodeDisplay {
+            border: 2px solid #333;
+            background: #fff; /* QR codes usually need a white background */
+            width: 100%;
+            max-width: 300px; /* Limits the max size of the QR code */
+            margin: 10px auto;
+            display: block;
+            border-radius: 8px;
+            min-height: 300px;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            display: flex; /* Use flex to center QR code image/canvas */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #qrCodeDisplay canvas, #qrCodeDisplay img {
+            max-width: 100% !important; /* Ensure generated QR fits the div */
+            height: auto !important;
+        }
+        .log-output {
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            height: 180px;
+            overflow-y: auto;
+            font-size: 11px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status-bar {
+            font-size: 12px;
+            color: #888;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .file-info, .qr-info {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid #00ff88;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        .qr-info { background: rgba(255, 255, 0, 0.1); border-color: #ffff00; }
+        .encoding-options label {
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        .encoding-options input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            background: #000;
+            border: 1px solid #333;
+            color: #00ff88;
+            padding: 8px;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+        .option-group {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+        }
+        .option-group strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 PXOS QR Code Generator</h1>
+    <p>Convert files into scannable QR codes for mobile devices</p>
+    
+    <div class="main-container">
+        <!-- Generator Panel -->
+        <div class="panel generator-panel">
+            <h2>📁 File to QR Converter</h2>
+            
+            <div class="option-group" id="fileInputGroup">
+                <strong>Upload File:</strong>
+                <input type="file" id="fileInput" accept="*">
+            </div>
+            
+            <div class="option-group">
+                <strong>QR Content Type:</strong>
+                <select id="qrMode" onchange="togglePxTriggerInputs()">
+                    <option value="summary">📋 File Summary (Recommended)</option>
+                    <option value="content">📄 File Content (Text Only)</option>
+                    <option value="metadata">ℹ️ File Information</option>
+                    <option value="link">🔗 Share Link</option>
+                    <option value="px_trigger">🚀 PX Trigger (PXRUN://)</option>
+                </select>
+            </div>
+
+            <div class="option-group" id="pxTriggerInputs" style="display: none;">
+                <strong>PX Trigger Payload:</strong>
+                <input type="text" id="pxPayloadInput" placeholder="e.g., zTXt:boot/module/init or url:http://example.com/digest.pxdigest">
+                <strong>PX Runtime Version (Optional):</strong>
+                <input type="text" id="pxVersionInput" placeholder="e.g., 1.0.0">
+                <small class="text-gray-400">This will generate a QR for a pre-installed PX Runtime.</small>
+            </div>
+            
+            <div class="option-group">
+                <strong>QR Size:</strong>
+                <select id="qrSize">
+                    <option value="200">200x200 (Small)</option>
+                    <option value="300" selected>300x300 (Medium)</option>
+                    <option value="400">400x400 (Large)</option>
+                </select>
+            </div>
+            
+            <div class="encoding-options">
+                <strong>Options:</strong>
+                <label><input type="checkbox" id="includeMetadata" checked> Include File Info</label>
+                <label><input type="checkbox" id="compactMode" checked> Compact Format</label>
+            </div>
+            
+            <button class="generator-btn" onclick="generateQR()">🔄 Generate QR Code</button>
+            <button class="generator-btn" onclick="downloadQR()">💾 Download PNG</button>
+            <button class="generator-btn" onclick="testQRContent()">🌐 Test QR Content</button>
+            
+            <div class="file-info" id="fileInfo" style="display: none;">
+                <strong>File Information:</strong>
+                <div id="fileDetails"></div>
+            </div>
+            
+            <div class="log-output" id="logOutput">
+                <div style="color: #00ff88;">[Ready] QR Generator initialized</div>
+            </div>
+            <div class="status-bar" id="generatorStatus">Select a file or PX Trigger mode to begin</div>
+        </div>
+        
+        <!-- Preview Panel -->
+        <div class="panel preview-panel">
+            <h2>📱 QR Code Preview</h2>
+            
+            <div id="qrCodeDisplay">
+                <div style="margin-top: 100px; color: #999;">
+                    📱 Scannable QR Code<br>
+                    will appear here
+                </div>
+            </div>
+            
+            <button class="preview-btn" onclick="copyQRData()">📋 Copy QR Data</button>
+            <button class="preview-btn" onclick="clearQR()">🧹 Clear</button>
+            
+            <div class="qr-info" id="qrInfo" style="display: none;">
+                <strong>QR Information:</strong>
+                <div id="qrDetails"></div>
+            </div>
+            
+            <div>
+                <strong>QR Data:</strong>
+                <textarea id="qrDataPreview" readonly placeholder="QR data will appear here..."></textarea>
+            </div>
+            
+            <div class="status-bar" id="previewStatus">No QR code generated</div>
+        </div>
+    </div>
+
+    <script>
+        let qrCode = null; // Holds the QRCode.js instance
+        let currentQRData = null;
+        let currentFile = null;
+
+        // --- Core Utility Functions (moved to top for guaranteed definition) ---
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('logOutput');
+            const colors = {
+                'info': '#00ff88',
+                'error': '#ff4444',
+                'warning': '#ffaa00',
+                'success': '#44ff44'
+            };
+            const color = colors[type] || colors.info;
+            
+            output.insertAdjacentHTML('afterbegin', `<div style="color: ${color}">[${new Date().toLocaleTimeString()}] ${message}</div>`);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('generatorStatus').textContent = message;
+            document.getElementById('previewStatus').textContent = currentQRData ? 
+                `QR ready (${currentQRData.length} chars)` : 
+                'No QR code generated';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showFileInfo(file) {
+            const fileInfo = document.getElementById('fileInfo');
+            const fileDetails = document.getElementById('fileDetails');
+            
+            fileDetails.innerHTML = `
+                <div>📄 Name: ${file.name}</div>
+                <div>📊 Size: ${formatFileSize(file.size)}</div>
+                <div>🏷️ Type: ${file.type || 'Unknown'}</div>
+                <div>📅 Modified: ${new Date(file.lastModified).toLocaleDateString()}</div>
+            `;
+            
+            fileInfo.style.display = 'block';
+        }
+
+        function showQRInfo(data) {
+            const qrInfo = document.getElementById('qrInfo');
+            const qrDetails = document.getElementById('qrDetails');
+            const mode = document.getElementById('qrMode').value;
+            
+            let modeDescription = '';
+            switch(mode) {
+                case 'summary': modeDescription = 'Readable file summary'; break;
+                case 'content': modeDescription = 'File content preview'; break;
+                case 'metadata': modeDescription = 'File information only'; break;
+                case 'link': modeDescription = 'Shareable file description'; break;
+                case 'px_trigger': modeDescription = 'PX Runtime Trigger'; break;
+            }
+            
+            qrDetails.innerHTML = `
+                <div>📏 Text Length: ${data.length} characters</div>
+                <div>📱 Content: ${modeDescription}</div>
+                <div>📊 QR Size: ${document.getElementById('qrSize').value}px</div>
+                <div>✅ Phone Readable: Yes (Plain Text)</div>
+                <div>🔍 Scannable: Any QR reader</div>
+            `;
+            
+            qrInfo.style.display = 'block';
+        }
+
+        // --- Event Handlers & Main Logic ---
+
+        // File input handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            handleFileSelect(e.target.files[0]);
+        });
+
+        // Function to toggle visibility of PX Trigger specific inputs
+        function togglePxTriggerInputs() {
+            const qrMode = document.getElementById('qrMode').value;
+            const pxTriggerInputs = document.getElementById('pxTriggerInputs');
+            const fileInputGroup = document.getElementById('fileInputGroup');
+            const includeMetadataCheckbox = document.getElementById('includeMetadata');
+            const compactModeCheckbox = document.getElementById('compactMode');
+
+            if (qrMode === 'px_trigger') {
+                pxTriggerInputs.style.display = 'block';
+                fileInputGroup.style.display = 'none'; // Hide file input
+                currentFile = null; // Clear current file selection
+                document.getElementById('fileInput').value = ''; // Reset file input element
+                document.getElementById('fileInfo').style.display = 'none'; // Hide file info
+                includeMetadataCheckbox.checked = false; // Uncheck metadata for PX trigger
+                includeMetadataCheckbox.disabled = true; // Disable metadata for PX trigger
+                compactModeCheckbox.checked = false; // Uncheck compact for PX trigger
+                compactModeCheckbox.disabled = true; // Disable compact for PX trigger
+                log('🚀 Switched to PX Trigger mode. Enter your payload.');
+            } else {
+                pxTriggerInputs.style.display = 'none';
+                fileInputGroup.style.display = 'block'; // Show file input
+                includeMetadataCheckbox.disabled = false; // Enable metadata
+                compactModeCheckbox.disabled = false; // Enable compact
+                log('📋 Switched to File-based QR mode.');
+            }
+            updateStatus(qrMode === 'px_trigger' ? 'Enter PX Trigger payload' : 'Select a file to begin');
+        }
+
+        function handleFileSelect(file) {
+            if (!file) return;
+            
+            currentFile = file;
+            showFileInfo(file);
+            log(`📁 File selected: ${file.name} (${formatFileSize(file.size)})`);
+            updateStatus('File loaded - ready to generate QR');
+        }
+
+        async function generateQR() {
+            const mode = document.getElementById('qrMode').value;
+            let qrData = '';
+
+            if (mode === 'px_trigger') {
+                const pxPayload = document.getElementById('pxPayloadInput').value.trim();
+                const pxVersion = document.getElementById('pxVersionInput').value.trim();
+
+                if (!pxPayload) {
+                    log('❌ PX Trigger payload cannot be empty!', 'error');
+                    return;
+                }
+                
+                qrData = `PXRUN://${pxPayload}`;
+                if (pxVersion) {
+                    qrData += `&v=${pxVersion}`;
+                }
+                log(`🚀 Generating PX Trigger QR with payload: ${pxPayload}`);
+
+            } else { // File-based modes
+                if (!currentFile) {
+                    log('❌ Please select a file first', 'error');
+                    return;
+                }
+                const includeMetadata = document.getElementById('includeMetadata').checked;
+                const compactMode = document.getElementById('compactMode').checked;
+                qrData = await prepareFileBasedQRData(currentFile, mode, includeMetadata, compactMode);
+                log('🔄 Starting QR generation for file...');
+            }
+            
+            updateStatus('Generating QR code...');
+
+            try {
+                const qrSize = parseInt(document.getElementById('qrSize').value, 10);
+                
+                // QR Code maximum character limits vary by version/error correction, but ~2000-3000 is a safe upper bound for common scanning.
+                // Truncate to ensure basic scannability even with complex data, as browsers can vary in QR library performance.
+                const MAX_QR_DATA_LENGTH = 2000;
+                if (qrData.length > MAX_QR_DATA_LENGTH) {
+                    qrData = qrData.substring(0, MAX_QR_DATA_LENGTH - 50) + '\n...[truncated data for QR code]';
+                    log(`⚠️ Data truncated to ${MAX_QR_DATA_LENGTH} characters to ensure scannability. Original was ${qrData.length}.`, 'warning');
+                }
+
+                // Clear existing QR code content before generating a new one
+                const qrCodeDisplay = document.getElementById('qrCodeDisplay');
+                qrCodeDisplay.innerHTML = ''; 
+
+                // Initialize QRCode.js
+                qrCode = new QRCode(qrCodeDisplay, {
+                    text: qrData,
+                    width: qrSize,
+                    height: qrSize,
+                    colorDark : "#000000", // Black
+                    colorLight : "#ffffff", // White
+                    correctLevel : QRCode.CorrectLevel.H // High error correction
+                });
+                
+                currentQRData = qrData;
+                document.getElementById('qrDataPreview').value = qrData; // Fix: Assign qrData to the textarea
+                showQRInfo(qrData); // This function is now correctly defined above
+                
+                log('✅ QR code generated successfully!');
+                log(`📊 Data size: ${qrData.length} characters`);
+                updateStatus('QR code ready for scanning');
+
+            } catch (error) {
+                log(`❌ Generation failed: ${error.message}`, 'error');
+                updateStatus('Generation failed');
+            }
+        }
+
+        async function prepareFileBasedQRData(file, mode, includeMetadata, compactMode) {
+            let qrText = '';
+
+            if (mode === 'summary') {
+                const content = await readFileAsText(file);
+                qrText = createReadableSummary(content, file, compactMode);
+            } else if (mode === 'content') {
+                const content = await readFileAsText(file);
+                // Content mode can be very long, truncate more aggressively for QR
+                qrText = `FILE: ${file.name}\n\nCONTENT:\n${content.substring(0, 1000)}`;
+                if (content.length > 1000) {
+                    qrText += '\n\n[Content truncated for QR code...]';
+                }
+            } else if (mode === 'metadata') {
+                qrText = createMetadataText(file, compactMode);
+            } else if (mode === 'link') {
+                qrText = `File: ${file.name}\nSize: ${formatFileSize(file.size)}\nType: ${file.type}\nGenerated: ${new Date().toLocaleString()}\n\nThis QR code represents the file "${file.name}"`;
+            }
+
+            // Always include metadata if checked, regardless of mode, for extra context
+            if (includeMetadata && mode !== 'metadata') { // Ensure metadata isn't duplicated if 'metadata' mode is chosen
+                qrText = createMetadataText(file, compactMode) + '\n\n' + qrText;
+            }
+
+            return qrText;
+        }
+
+        function createReadableSummary(content, file, compact) {
+            let summary = compact ? `SUM:${file.name}|${formatFileSize(file.size)}|${file.type||'unk'}\n` : `📄 FILE SUMMARY\nName: ${file.name}\nSize: ${formatFileSize(file.size)}\nType: ${file.type || 'Unknown'}\nDate: ${new Date().toLocaleDateString()}\n\n`;
+
+            if (file.name.match(/\.html?$/i)) {
+                summary += analyzeHTMLForQR(content, compact);
+            } else if (file.name.match(/\.js$/i)) {
+                summary += analyzeJSForQR(content, compact);
+            } else if (file.name.match(/\.py$/i)) {
+                summary += analyzePythonForQR(content, compact);
+            } else {
+                summary += analyzeGenericFileForQR(content, compact);
+            }
+
+            return summary;
+        }
+
+        function analyzeHTMLForQR(content, compact) {
+            let analysis = compact ? 'HTML:' : '🌐 HTML FILE ANALYSIS\n';
+            
+            const titleMatch = content.match(/<title>(.*?)<\/title>/i);
+            if (titleMatch) {
+                analysis += compact ? `T:${titleMatch[1].substring(0, 30)}|` : `Title: ${titleMatch[1].substring(0, 50)}\n`;
+            }
+
+            const features = [];
+            if (content.includes('<script>')) features.push('JS');
+            if (content.includes('<style>')) features.push('CSS');
+            if (content.includes('<canvas>')) features.push('Canvas');
+            
+            if (features.length > 0) {
+                analysis += compact ? `F:${features.join(',')}|` : `Features: ${features.join(', ')}\n`;
+            }
+
+            const lines = content.split('\n').filter(line => line.trim());
+            const previewLength = compact ? 150 : 300;
+            const preview = lines.slice(0, 5).join(' ').substring(0, previewLength);
+            analysis += compact ? `PRE:${preview}...` : `\nPREVIEW:\n${preview}`;
+            
+            if (lines.length > 5 && !compact) {
+                analysis += '\n[More content available in original file]';
+            }
+            return analysis;
+        }
+
+        function analyzeJSForQR(content, compact) {
+            let analysis = compact ? 'JS:' : '⚡ JAVASCRIPT FILE\n';
+            
+            const functions = content.match(/function\s+\w+|const\s+\w+\s*=\s*function|let\s+\w+\s*=\s*function|var\s+\w+\s*=\s*function/g);
+            if (functions) {
+                analysis += compact ? `Func:${functions.length}|` : `Functions: ${functions.length}\n`;
+            }
+
+            const classes = content.match(/class\s+\w+/g);
+            if (classes) {
+                analysis += compact ? `Cls:${classes.length}|` : `Classes: ${classes.length}\n`;
+            }
+
+            const previewLength = compact ? 200 : 400;
+            const preview = content.substring(0, previewLength);
+            analysis += compact ? `PRE:${preview}...` : `\nCODE PREVIEW:\n${preview}`;
+            
+            return analysis;
+        }
+
+        function analyzePythonForQR(content, compact) {
+            let analysis = compact ? 'PY:' : '🐍 PYTHON FILE\n';
+            
+            const functions = content.match(/def\s+\w+/g);
+            if (functions) {
+                analysis += compact ? `Func:${functions.length}|` : `Functions: ${functions.length}\n`;
+            }
+
+            const imports = content.match(/^(import|from)\s+\w+/gm); // Use 'gm' for multiline global search
+            if (imports) {
+                analysis += compact ? `Imp:${imports.slice(0, 2).join(',')}|` : `Imports: ${imports.slice(0, 3).join(', ')}\n`;
+            }
+
+            const previewLength = compact ? 200 : 400;
+            const preview = content.substring(0, previewLength);
+            analysis += compact ? `PRE:${preview}...` : `\nCODE PREVIEW:\n${preview}`;
+            
+            return analysis;
+        }
+
+        function analyzeGenericFileForQR(content, compact) {
+            const lines = content.split('\n');
+            let analysis = compact ? 'TXT:' : `📝 TEXT FILE\n`;
+            analysis += compact ? `Lines:${lines.length}|Chars:${content.length}|` : `Lines: ${lines.length}\nCharacters: ${content.length}\n\n`;
+            
+            const previewLength = compact ? 250 : 500;
+            const preview = content.substring(0, previewLength);
+            analysis += compact ? `PRE:${preview}...` : `CONTENT PREVIEW:\n${preview}`;
+            
+            if (content.length > previewLength && !compact) {
+                analysis += '\n[Content continues...]';
+            }
+            
+            return analysis;
+        }
+
+        function createMetadataText(file, compact) {
+            if (compact) {
+                return `META:${file.name}|${formatFileSize(file.size)}|${file.type||'unk'}|${new Date(file.lastModified).toLocaleDateString()}`;
+            } else {
+                return `📊 FILE INFORMATION\n\nName: ${file.name}\nSize: ${formatFileSize(file.size)}\nType: ${file.type || 'Unknown'}\nLast Modified: ${new Date(file.lastModified).toLocaleString()}\nGenerated: ${new Date().toLocaleString()}`;
+            }
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(new Error('Failed to read file. Please ensure it is a readable text file.'));
+                // Attempt to read as text. If it's a binary file, this might fail or result in gibberish.
+                reader.readAsText(file);
+            });
+        }
+        
+        function downloadQR() {
+            if (!qrCode) {
+                log('❌ No QR code to download. Generate one first.', 'error');
+                return;
+            }
+
+            const qrCodeDisplay = document.getElementById('qrCodeDisplay');
+            const canvas = qrCodeDisplay.querySelector('canvas'); // qrcode.js typically uses canvas
+
+            if (!canvas) {
+                log('❌ Could not find QR code canvas for download.', 'error');
+                return;
+            }
+
+            try {
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png'); // Get data URL of the canvas as PNG
+                link.download = `${currentFile ? currentFile.name.replace(/\.[^/.]+$/, "") : 'px_trigger_qr'}_${new Date().toISOString().slice(0,10)}.png`;
+                document.body.appendChild(link); // Append to body to make it clickable
+                link.click(); // Programmatically click the link
+                document.body.removeChild(link); // Remove the link
+                
+                log(`💾 Downloaded QR as: ${link.download}`);
+            } catch (error) {
+                log(`❌ Failed to download QR code: ${error.message}. Ensure the QR code is fully rendered.`, 'error');
+            }
+        }
+
+        async function copyQRData() {
+            if (!currentQRData) {
+                log('❌ No QR data to copy', 'error');
+                return;
+            }
+
+            try {
+                // Using document.execCommand('copy') as navigator.clipboard.writeText() may not work due to iFrame restrictions
+                const textarea = document.createElement('textarea');
+                textarea.value = currentQRData;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                log('📋 QR data copied to clipboard');
+            } catch (error) {
+                log('❌ Failed to copy to clipboard. Browser restrictions or permission denied.', 'error');
+            }
+        }
+
+        function testQRContent() { // Renamed from testWithURL for clarity
+            if (!currentQRData) {
+                log('❌ No QR data to test', 'error');
+                return;
+            }
+
+            log('🔍 Analyzing QR content for readability...');
+            
+            const lines = currentQRData.split('\n');
+            const firstLine = lines[0] || '';
+            
+            log('✅ QR contains readable text (preview below)');
+            log(`📄 First few chars: ${firstLine.substring(0, 70)}...`);
+            log(`📊 Total lines: ${lines.length}`);
+            log(`📏 Total characters: ${currentQRData.length}`);
+            
+            // Provide more specific feedback based on content
+            if (currentQRData.startsWith('PXRUN://')) {
+                log('🚀 Detected PX Trigger QR code!');
+                const url = new URL('http://dummy.com/?' + currentQRData.substring(8)); // Use dummy base URL to parse parameters
+                const payload = url.searchParams.get('payload') || currentQRData.substring(8).split('?')[0];
+                const version = url.searchParams.get('v') || 'N/A';
+                log(`  Payload: ${payload}`);
+                log(`  Version: ${version}`);
+                log('  This QR code is designed to activate a pre-installed PX Runtime with the specified payload.');
+            }
+            else if (currentQRData.includes('FILE SUMMARY')) {
+                log('📋 Content type: File Summary');
+            } else if (currentQRData.includes('CONTENT:')) {
+                log('📄 Content type: File Content Preview');
+            } else if (currentQRData.includes('FILE INFORMATION')) {
+                log('ℹ️ Content type: File Metadata');
+            } else if (currentQRData.includes('META:') || currentQRData.includes('SUM:') || currentQRData.includes('HTML:') || currentQRData.includes('JS:') || currentQRData.includes('PY:') || currentQRData.includes('TXT:')) {
+                log('✅ Content type: Compact Encoded Data');
+            }
+            
+            log('📱 This QR code will display readable text when scanned by a standard QR reader app.');
+        }
+
+        function clearQR() {
+            const qrCodeDisplay = document.getElementById('qrCodeDisplay');
+            qrCodeDisplay.innerHTML = `
+                <div style="margin-top: 100px; color: #999;">
+                    📱 Scannable QR Code<br>
+                    will appear here
+                </div>
+            `;
+            document.getElementById('qrDataPreview').value = '';
+            document.getElementById('qrInfo').style.display = 'none';
+            currentQRData = null;
+            qrCode = null; // Clear the qrcode.js instance
+            updateStatus('No QR code generated');
+            log('🧹 QR code cleared');
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            togglePxTriggerInputs(); // Set initial state based on default dropdown value
+            log('🚀 PXOS QR Generator ready - now supports PX Trigger codes!');
+            updateStatus('Select a file or PX Trigger mode to begin');
+        });
+    </script>
+</body>
+</html>

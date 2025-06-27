@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PXRuntime Autopilot</title>
+  <style>
+    body { font-family: monospace; background: #0e0e0e; color: #eee; margin: 0; padding: 0; }
+    #canvas { background: #000; border: 2px solid #444; display: block; margin: 20px auto; }
+    #log, #roadmap { white-space: pre-wrap; margin: 10px; padding: 10px; border: 1px solid #333; background: #111; }
+    #controls { text-align: center; margin: 10px; }
+    #qrOutput { text-align: center; margin: 20px; }
+    button { background: #222; color: #fff; border: 1px solid #444; padding: 6px 12px; margin: 5px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+</head>
+<body>
+  <canvas id="canvas" width="256" height="256"></canvas>
+  <div id="controls">
+    <button onclick="reset()">⏹ Reset</button>
+  </div>
+  <div id="roadmap"><b>PXRoadmap Autopilot</b>\n:: initializing ::</div>
+  <div id="log"><b>PXLogs</b>\n</div>
+  <div id="qrOutput"></div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const mem = new Uint8Array(256 * 256 * 4);
+let pc = 0;
+
+const pxroadmap = [
+  "generate pxdigest with embedded runtime",
+  "encode to qr",
+  "export to /qr/hello_qr.png"
+];
+
+function drawMemory() {
+  const img = ctx.createImageData(256, 256);
+  for (let i = 0; i < mem.length; i++) {
+    img.data[i] = mem[i];
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function log(msg) {
+  document.getElementById('log').textContent += msg + "\n";
+}
+
+function updateRoadmap(msg) {
+  document.getElementById('roadmap').textContent += "\n:: " + msg + " ::";
+}
+
+function reset() {
+  pc = 0;
+  mem.fill(0);
+  drawMemory();
+  log("Reset complete.");
+}
+
+function autopilotBuildPXDigest() {
+  const digest = new Uint8Array(mem);
+  const blob = new Blob([digest], { type: "application/octet-stream" });
+  return blob;
+}
+
+function encodeDigestToQR(blob) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const bytes = new Uint8Array(e.target.result);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    const qr = qrcode(0, 'L');
+    qr.addData(base64);
+    qr.make();
+    document.getElementById('qrOutput').innerHTML = qr.createImgTag(6);
+    log("QR code generated and displayed.");
+  };
+  reader.readAsArrayBuffer(blob);
+}
+
+function executeRoadmap() {
+  for (const step of pxroadmap) {
+    log("📋 Step: " + step);
+    if (step.includes("generate pxdigest")) {
+      const blob = autopilotBuildPXDigest();
+      window.currentDigestBlob = blob;
+      updateRoadmap("Generated PXDigest snapshot");
+    }
+    if (step.includes("encode to qr")) {
+      if (window.currentDigestBlob) {
+        encodeDigestToQR(window.currentDigestBlob);
+        updateRoadmap("Encoded PXDigest to QR");
+      }
+    }
+  }
+}
+
+window.onload = function() {
+  reset();
+  setTimeout(executeRoadmap, 1000);
+};
+</script>
+</body>
+</html>

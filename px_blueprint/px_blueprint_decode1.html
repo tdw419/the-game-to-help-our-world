@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PXBlueprint Decoder</title>
+  <style>
+    body { font-family: monospace; background: #0e0e0e; color: #eee; padding: 20px; }
+    canvas { display: block; margin: 10px 0; border: 1px solid #333; background: #000; }
+    textarea, input, button { background: #111; color: #eee; border: 1px solid #444; padding: 6px; margin: 5px 0; }
+    textarea { width: 100%; height: 120px; }
+    #qrCanvas { display: none; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+</head>
+<body>
+
+<h2>📥 PXBlueprint Decoder</h2>
+
+<h3>1. Load PXDigest File</h3>
+<input type="file" id="digestInput" accept=".pxd">
+<canvas id="digestCanvas" width="256" height="256"></canvas>
+
+<h3>2. Load QR Code Image</h3>
+<input type="file" id="qrInput" accept="image/*">
+<canvas id="qrCanvas" width="512" height="512"></canvas>
+<textarea id="decodedQR" placeholder="Decoded roadmap steps will appear here..."></textarea>
+
+<script>
+const digestCanvas = document.getElementById('digestCanvas');
+const dctx = digestCanvas.getContext('2d');
+const mem = new Uint8Array(256 * 256 * 4);
+
+function drawMemory() {
+  const img = dctx.createImageData(256, 256);
+  for (let i = 0; i < mem.length; i++) {
+    img.data[i] = mem[i];
+  }
+  dctx.putImageData(img, 0, 0);
+}
+
+document.getElementById('digestInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const buffer = new Uint8Array(event.target.result);
+    for (let i = 0; i < mem.length && i < buffer.length; i++) {
+      mem[i] = buffer[i];
+    }
+    drawMemory();
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+document.getElementById('qrInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  const qrCanvas = document.getElementById('qrCanvas');
+  const qrCtx = qrCanvas.getContext('2d');
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    img.onload = () => {
+      qrCanvas.width = img.width;
+      qrCanvas.height = img.height;
+      qrCtx.drawImage(img, 0, 0);
+      const imgData = qrCtx.getImageData(0, 0, qrCanvas.width, qrCanvas.height);
+      const code = jsQR(imgData.data, qrCanvas.width, qrCanvas.height);
+      if (code) {
+        document.getElementById('decodedQR').value = code.data.replace(/\|/g, '\n');
+      } else {
+        document.getElementById('decodedQR').value = '[QR code not detected]';
+      }
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+</script>
+
+</body>
+</html>

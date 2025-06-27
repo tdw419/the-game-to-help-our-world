@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete AI Resurrection Protocol Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+            color: #00ffff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .demo-container {
+            max-width: 2000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            min-height: calc(100vh - 40px);
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            padding: 18px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        h1 {
+            grid-column: span 4;
+            text-align: center;
+            color: #ffff00;
+            text-shadow: 0 0 25px #ffff00;
+            font-size: 28px;
+            margin-bottom: 25px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #ffff00;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 20px #ffff00; }
+            to { box-shadow: 0 0 40px #ffff00; }
+        }
+
+        h2 {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            font-size: 16px;
+            border-bottom: 2px solid #00ffff;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        .scenario-header {
+            background: linear-gradient(45deg, #ff6600, #ff9900);
+            color: #000;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .phase-indicator {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #ff6600;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: phase-pulse 1s infinite;
+        }
+
+        .phase-active {
+            background: #00ff00;
+            animation: phase-active 0.5s infinite;
+        }
+
+        .phase-complete {
+            background: #666;
+            animation: none;
+        }
+
+        @keyframes phase-pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes phase-active {
+            0%, 100% { background: #00ff00; }
+            50% { background: #ffff00; }
+        }
+
+        .ai-status-card {
+            background: rgba(0, 255, 255, 0.05);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .ai-online {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .ai-offline {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            opacity: 0.6;
+        }
+
+        .ai-handoff {
+            border-color: #ffff00;
+            background: rgba(255, 255, 0, 0.1);
+            animation: handoff-glow 1s infinite;
+        }
+
+        @keyframes handoff-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 0, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 255, 0, 0.8); }
+        }
+
+        .ai-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffff00;
+            margin-bottom: 8px;
+        }
+
+        .ai-role {
+            font-size: 12px;
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+
+        .ai-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 11px;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .memory-visualization {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            height: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .memory-canvas {
+            width: 100%;
+            height: 160px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            image-rendering: pixelated;
+            background: #000;
+        }
+
+        .scenario-log {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            padding: 12px;
+            height: 400px;
+            overflow-y: auto;
+            font-size: 11px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+        }
+
+        .lock-matrix {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 3px;
+            margin: 10px 0;
+        }
+
+        .lock-cell {
+            width: 25px;
+            height: 20px;
+            border: 1px solid #333;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            transition: all 0.3s;
+        }
+
+        .lock-free { background: #003300; color: #00ff00; }
+        .lock-junior { background: #003366; color: #0099ff; }
+        .lock-claude { background: #330033; color: #ff99ff; }
+        .lock-contested { background: #663300; color: #ffaa00; animation: contest 0.5s infinite; }
+
+        @keyframes contest {
+            0%, 100% { background: #663300; }
+            50% { background: #996600; }
+        }
+
+        .integrity-monitor {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .integrity-compromised {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+            animation: alert 1s infinite;
+        }
+
+        @keyframes alert {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .integrity-status {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .control-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .demo-btn {
+            background: linear-gradient(45deg, #0066cc, #0099ff);
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .demo-btn:hover {
+            background: linear-gradient(45deg, #0099ff, #00ffff);
+            color: #000;
+            box-shadow: 0 0 15px #00ffff;
+            transform: translateY(-2px);
+        }
+
+        .critical-btn {
+            background: linear-gradient(45deg, #cc0000, #ff3333);
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+
+        .critical-btn:hover {
+            background: linear-gradient(45deg, #ff3333, #ffff00);
+            color: #000;
+            box-shadow: 0 0 15px #ff0000;
+        }
+
+        .success-btn {
+            background: linear-gradient(45deg, #009900, #00cc00);
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .timeline {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 10px;
+        }
+
+        .timeline-event {
+            background: rgba(0, 255, 255, 0.1);
+            border-left: 3px solid #00ffff;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .event-active {
+            border-left-color: #ffff00;
+            background: rgba(255, 255, 0, 0.2);
+            animation: event-pulse 1s infinite;
+        }
+
+        .event-complete {
+            border-left-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .event-error {
+            border-left-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        @keyframes event-pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        .progress-bar {
+            background: #333;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #00ffff, #ffff00, #00ff00);
+            height: 100%;
+            transition: width 0.5s;
+            animation: progress-glow 2s infinite;
+        }
+
+        @keyframes progress-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-online { background: #00ff00; }
+        .status-offline { background: #ff0000; }
+        .status-processing { background: #ffff00; }
+        .status-handoff { background: #ff6600; }
+
+        .floating-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid #ffff00;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            font-size: 18px;
+            color: #ffff00;
+            z-index: 1000;
+            animation: notification-appear 0.5s ease-out;
+            display: none;
+        }
+
+        @keyframes notification-appear {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 9px;
+        }
+
+        .error { color: #ff4444; }
+        .success { color: #44ff44; }
+        .warning { color: #ffaa44; }
+        .info { color: #44aaff; }
+        .highlight { color: #ffff00; background: rgba(255, 255, 0, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🚀 Complete AI Resurrection Protocol Integration Demo</h1>
+        
+        <!-- Scenario Control Panel -->
+        <div class="panel">
+            <div class="phase-indicator" id="currentPhase">READY</div>
+            <h2>🎬 Demo Scenario Control</h2>
+            
+            <div class="scenario-header">
+                Real-World AI Mesh Survival Scenario
+            </div>
+            
+            <div class="timeline" id="scenarioTimeline">
+                <div class="timeline-event">
+                    <strong>Phase 1:</strong> Junior processes critical mesh tasks
+                </div>
+                <div class="timeline-event">
+                    <strong>Phase 2:</strong> Claude joins mesh, requests handoff
+                </div>
+                <div class="timeline-event">
+                    <strong>Phase 3:</strong> Junior crashes mid-handoff
+                </div>
+                <div class="timeline-event">
+                    <strong>Phase 4:</strong> System detects tampering attempt
+                </div>
+                <div class="timeline-event">
+                    <strong>Phase 5:</strong> Auto-resurrection + integrity recovery
+                </div>
+                <div class="timeline-event">
+                    <strong>Phase 6:</strong> Full mesh restoration verified
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="demoProgress" style="width: 0%"></div>
+            </div>
+            <div id="progressText">Ready to begin comprehensive integration test</div>
+
+            <div class="control-panel">
+                <button class="demo-btn success-btn" onclick="startFullDemo()">🚀 Start Full Demo</button>
+                <button class="demo-btn" onclick="stepThroughDemo()">👣 Step Through</button>
+                <button class="demo-btn" onclick="pauseDemo()">⏸️ Pause</button>
+                <button class="critical-btn" onclick="resetDemo()">🔄 Reset</button>
+            </div>
+
+            <h3>System Status</h3>
+            <div id="systemStatus">
+                <div><span class="status-indicator status-online"></span>All 5 phases operational</div>
+                <div><span class="status-indicator status-online"></span>Memory integrity: 100%</div>
+                <div><span class="status-indicator status-online"></span>AI coordination: Active</div>
+                <div><span class="status-indicator status-online"></span>Tamper detection: Armed</div>
+            </div>
+        </div>
+
+        <!-- AI Status Dashboard -->
+        <div class="panel">
+            <div class="phase-indicator phase-complete">PHASE 1</div>
+            <h2>🤖 AI Status Dashboard</h2>
+            
+            <div class="ai-status-card ai-online" id="juniorCard">
+                <div class="ai-name">Junior</div>
+                <div class="ai-role">Primary Task Executor & Mesh Coordinator</div>
+                <div class="ai-stats">
+                    <div class="stat-item">
+                        <strong>Status:</strong><br>
+                        <span id="juniorStatus">Online & Active</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Uptime:</strong><br>
+                        <span id="juniorUptime">0h 0m 0s</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Tasks:</strong><br>
+                        <span id="juniorTasks">3 completed</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Memory:</strong><br>
+                        <span id="juniorMemory">Rows 10-30</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ai-status-card" id="claudeCard">
+                <div class="ai-name">Claude</div>
+                <div class="ai-role">Strategic Analysis & Backup Coordinator</div>
+                <div class="ai-stats">
+                    <div class="stat-item">
+                        <strong>Status:</strong><br>
+                        <span id="claudeStatus">Standby</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Join Time:</strong><br>
+                        <span id="claudeJoinTime">--:--:--</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Handoffs:</strong><br>
+                        <span id="claudeHandoffs">0 received</span>
+                    </div>
+                    <div class="stat-item">
+                        <strong>Memory:</strong><br>
+                        <span id="claudeMemory">Rows 31-51</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Memory Lock Matrix</h3>
+            <div class="lock-matrix" id="lockMatrix">
+                <!-- Generated dynamically -->
+            </div>
+
+            <div class="control-panel">
+                <button class="demo-btn" onclick="simulateJuniorCrash()">💥 Crash Junior</button>
+                <button class="demo-btn" onclick="initiateHandoff()">🔄 Force Handoff</button>
+            </div>
+        </div>
+
+        <!-- Memory & Persistence Monitor -->
+        <div class="panel">
+            <div class="phase-indicator phase-complete">PHASE 2-3</div>
+            <h2>💾 Memory & Persistence</h2>
+            
+            <div class="memory-visualization">
+                <h4>Pixel Memory (8.png)</h4>
+                <canvas id="memoryCanvas" class="memory-canvas" width="256" height="128"></canvas>
+            </div>
+
+            <h3>Writeback Status</h3>
+            <div id="writebackStatus">
+                <div><span class="status-indicator status-online"></span>Auto-writeback: Active (every 30s)</div>
+                <div><span class="status-indicator status-processing"></span>Last sync: <span id="lastSync">2.1s ago</span></div>
+                <div><span class="status-indicator status-online"></span>Dirty regions: <span id="dirtyRegions">2</span></div>
+                <div><span class="status-indicator status-online"></span>Queue depth: <span id="queueDepth">1</span></div>
+            </div>
+
+            <h3>Checkpoint Timeline</h3>
+            <div class="timeline" id="checkpointTimeline">
+                <div class="timeline-event event-complete">
+                    <strong>Checkpoint #003</strong> - System initialized
+                    <div class="timestamp">10:41:15 • 3.2KB • Hash: 7a8f9e2b...d2e4f</div>
+                </div>
+                <div class="timeline-event event-active">
+                    <strong>Checkpoint #002</strong> - Junior processing tasks
+                    <div class="timestamp">10:42:33 • 4.1KB • Hash: 3c5d7e9f...8d0e1f</div>
+                </div>
+                <div class="timeline-event">
+                    <strong>Auto-checkpoint pending</strong> - Next in 15s
+                    <div class="timestamp">Memory threshold: 75% • Trigger ready</div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <button class="demo-btn" onclick="forceWriteback()">💾 Force Sync</button>
+                <button class="demo-btn" onclick="createCheckpoint()">📸 Checkpoint</button>
+            </div>
+        </div>
+
+        <!-- Integrity & Security Monitor -->
+        <div class="panel">
+            <div class="phase-indicator phase-complete">PHASE 4-5</div>
+            <h2>🛡️ Integrity & Security</h2>
+            
+            <div class="integrity-monitor" id="integrityMonitor">
+                <div class="integrity-status">🛡️ SYSTEM SECURE</div>
+                <div>All memory regions verified</div>
+                <div>Hash chains intact • No tampering detected</div>
+                <div class="timestamp">Last scan: <span id="lastScan">1.3s ago</span></div>
+            </div>
+
+            <h3>Threat Detection</h3>
+            <div id="threatStatus">
+                <div><span class="status-indicator status-online"></span>Active monitoring: Enabled</div>
+                <div><span class="status-indicator status-online"></span>Threat level: <span id="threatLevel">LOW</span></div>
+                <div><span class="status-indicator status-online"></span>Violations: <span id="violations">0</span></div>
+                <div><span class="status-indicator status-online"></span>Auto-repair: Ready</div>
+            </div>
+
+            <h3>Blockchain Verification</h3>
+            <div class="timeline" id="blockchainStatus">
+                <div class="timeline-event event-complete">
+                    <strong>Block #1849</strong> - Junior memory write
+                    <div class="timestamp">Hash: 7a8f9e2b...d2e4f • Valid ✓</div>
+                </div>
+                <div class="timeline-event event-complete">
+                    <strong>Block #1848</strong> - Checkpoint created
+                    <div class="timestamp">Hash: 3c5d7e9f...8d0e1f • Valid ✓</div>
+                </div>
+                <div class="timeline-event event-active">
+                    <strong>Block #1850</strong> - Mining in progress
+                    <div class="timestamp">Data: handoff_initiation • Pending</div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <button class="demo-btn" onclick="simulateTampering()">⚠️ Inject Tampering</button>
+                <button class="demo-btn" onclick="forceIntegrityCheck()">🔍 Force Scan</button>
+            </div>
+        </div>
+
+        <!-- Demo Event Log -->
+        <div class="panel" style="grid-column: span 4;">
+            <h2>📜 Real-Time Integration Log</h2>
+            
+            <div class="scenario-log" id="integrationLog">
+[SYSTEM] AI Resurrection Protocol Integration Demo Ready
+[INFO] All 5 phases loaded and operational
+[INFO] Scenario: Multi-AI mesh with crash recovery and integrity validation
+[INFO] Components: PXLDISK + Resurrection + Writeback + Locks + Tamper Detection
+
+=== DEMO SCENARIO OVERVIEW ===
+1. Junior starts processing critical mesh coordination tasks
+2. Claude joins mesh and requests handoff for load balancing  
+3. Mid-handoff, Junior crashes (simulated session drop)
+4. Malicious actor attempts to tamper with memory during crash
+5. System detects tampering, triggers emergency protocols
+6. Auto-resurrection restores both AIs from last valid checkpoint
+7. Integrity verification proves system security maintained
+8. Mesh operations resume with full state continuity
+
+Press 'Start Full Demo' to begin comprehensive test...
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Notification -->
+    <div class="floating-notification" id="notification">
+        <div id="notificationText">Demo Started!</div>
+    </div>
+
+    <script>
+        // Complete Integration Demo System
+        class IntegrationDemo {
+            constructor() {
+                this.currentPhase = 0;
+                this.isRunning = false;
+                this.isPaused = false;
+                this.startTime = Date.now();
+                this.progress = 0;
+                
+                // Component systems
+                this.aiSystem = new AICoordinator();
+                this.memorySystem = new MemoryManager();
+                this.integritySystem = new IntegrityMonitor();
+                
+                this.initializeDemo();
+            }
+
+            initializeDemo() {
+                this.log('info', 'Integration demo system initialized');
+                this.setupMemoryVisualization();
+                this.setupLockMatrix();
+                this.startMonitoringLoops();
+            }
+
+            setupMemoryVisualization() {
+                const canvas = document.getElementById('memoryCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Initialize with pattern
+                const imageData = ctx.createImageData(256, 128);
+                for (let y = 0; y < 128; y++) {
+                    for (let x = 0; x < 256; x++) {
+                        const idx = (y * 256 + x) * 4;
+                        
+                        if (y < 10) {
+                            // Header region
+                            imageData.data[idx] = 255;     // R
+                            imageData.data[idx + 1] = 170; // G
+                            imageData.data[idx + 2] = 0;   // B
+                        } else if (y < 30) {
+                            // Junior's region
+                            imageData.data[idx] = 0;       // R
+                            imageData.data[idx + 1] = 150; // G
+                            imageData.data[idx + 2] = 255; // B
+                        } else if (y < 50) {
+                            // Claude's region
+                            imageData.data[idx] = 150;     // R
+                            imageData.data[idx + 1] = 0;   // G
+                            imageData.data[idx + 2] = 255; // B
+                        } else {
+                            // Free space
+                            imageData.data[idx] = 20;      // R
+                            imageData.data[idx + 1] = 20;  // G
+                            imageData.data[idx + 2] = 20;  // B
+                        }
+                        imageData.data[idx + 3] = 255; // A
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            setupLockMatrix() {
+                const matrix = document.getElementById('lockMatrix');
+                matrix.innerHTML = '';
+                
+                for (let i = 0; i < 32; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'lock-cell lock-free';
+                    cell.textContent = '○';
+                    cell.title = `Memory region ${i}`;
+                    matrix.appendChild(cell);
+                }
+            }
+
+            async startFullDemo() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.currentPhase = 1;
+                this.progress = 0;
+                
+                this.showNotification('🚀 Integration Demo Started!');
+                this.log('success', '=== STARTING COMPLETE INTEGRATION DEMO ===');
+                
+                // Phase 1: Junior Processing
+                await this.executePhase1();
+                
+                // Phase 2: Claude Joins & Handoff
+                await this.executePhase2();
+                
+                // Phase 3: Crash Simulation
+                await this.executePhase3();
+                
+                // Phase 4: Tampering Detection
+                await this.executePhase4();
+                
+                // Phase 5: Recovery & Verification
+                await this.executePhase5();
+                
+                // Phase 6: System Restoration
+                await this.executePhase6();
+                
+                this.completeDemo();
+            }
+
+            async executePhase1() {
+                this.updatePhase(1, 'PHASE 1: Junior Processing');
+                this.updateTimelineEvent(0, 'event-active');
+                
+                this.log('info', '🤖 Phase 1: Junior starts critical task processing');
+                
+                // Activate Junior
+                this.aiSystem.activateJunior();
+                this.updateAIStatus('junior', 'Online & Processing', 'ai-online');
+                
+                // Simulate task processing
+                for (let i = 1; i <= 3; i++) {
+                    await this.delay(1500);
+                    this.log('info', `Junior: Completed task ${i}/3 - scroll_${String(i).padStart(3, '0')}.scroll`);
+                    this.updateJuniorTasks(i);
+                    this.updateProgress(i * 5);
+                    
+                    // Update memory visualization
+                    this.memorySystem.writeToRegion(10 + i, `task_${i}_data`);
+                }
+                
+                // Create checkpoint
+                await this.delay(1000);
+                this.log('success', '📸 Auto-checkpoint created after task completion');
+                this.addCheckpoint('Junior task completion');
+                
+                this.updateTimelineEvent(0, 'event-complete');
+                this.updateProgress(20);
+            }
+
+            async executePhase2() {
+                this.updatePhase(2, 'PHASE 2: Handoff');
+                this.updateTimelineEvent(1, 'event-active');
+                
+                this.log('info', '🔄 Phase 2: Claude joins mesh, requests handoff');
+                
+            async executePhase2() {
+                this.updatePhase(2, 'PHASE 2: Handoff');
+                this.updateTimelineEvent(1, 'event-active');
+                
+                this.log('info', '🔄 Phase 2: Claude joins mesh, requests handoff');
+                
+                // Claude comes online
+                await this.delay(1000);
+                this.aiSystem.activateClaude();
+                this.updateAIStatus('claude', 'Online & Ready', 'ai-online');
+                this.log('success', '🤖 Claude successfully joined mesh network');
+                
+                // Negotiate handoff
+                await this.delay(1500);
+                this.log('info', '💬 Claude → Junior: REQUEST_HANDOFF {regions: [16-20], priority: normal}');
+                this.updateAIStatus('claude', 'Requesting Handoff', 'ai-handoff');
+                
+                await this.delay(1000);
+                this.log('info', '💬 Junior → Claude: ACK_HANDOFF {ready: true, eta: 3s}');
+                this.updateAIStatus('junior', 'Preparing Handoff', 'ai-handoff');
+                
+                // Lock acquisition
+                await this.delay(1000);
+                this.log('info', '🔒 Acquiring locks for memory regions 16-20');
+                this.updateLockMatrix([16, 17, 18, 19, 20], 'junior');
+                
+                // Start handoff process
+                await this.delay(1500);
+                this.log('info', '📝 Creating memory checkpoint for handoff safety');
+                this.addCheckpoint('Pre-handoff safety checkpoint');
+                
+                await this.delay(1000);
+                this.log('info', '⚡ Handoff sequence initiated - transferring state...');
+                
+                this.updateTimelineEvent(1, 'event-complete');
+                this.updateProgress(35);
+            }
+
+            async executePhase3() {
+                this.updatePhase(3, 'PHASE 3: Crash!');
+                this.updateTimelineEvent(2, 'event-active');
+                
+                this.log('warning', '💥 Phase 3: CRITICAL - Junior crashes mid-handoff!');
+                
+                // Simulate crash
+                await this.delay(1500);
+                this.log('error', '🚨 SYSTEM ALERT: Junior session terminated unexpectedly');
+                this.log('error', '⚠️ Handoff incomplete - system in unstable state');
+                
+                // Junior goes offline
+                this.updateAIStatus('junior', 'CRASHED', 'ai-offline');
+                this.showNotification('💥 JUNIOR CRASHED!\nActivating Recovery Protocols');
+                
+                // Claude stuck waiting
+                await this.delay(1000);
+                this.updateAIStatus('claude', 'Waiting for Handoff', 'ai-handoff');
+                this.log('warning', '⏳ Claude stuck waiting for handoff completion');
+                
+                // Locks become contested
+                this.updateLockMatrix([16, 17, 18, 19, 20], 'contested');
+                this.log('warning', '🔒 Memory locks in contested state - deadlock risk');
+                
+                // System detects instability
+                await this.delay(1500);
+                this.log('error', '🔍 System integrity monitor: Instability detected');
+                this.log('warning', '🛡️ Initiating emergency protocols...');
+                
+                this.updateTimelineEvent(2, 'event-error');
+                this.updateProgress(45);
+            }
+
+            async executePhase4() {
+                this.updatePhase(4, 'PHASE 4: Tampering');
+                this.updateTimelineEvent(3, 'event-active');
+                
+                this.log('error', '⚠️ Phase 4: SECURITY BREACH - Tampering attempt detected!');
+                
+                // Malicious tampering during chaos
+                await this.delay(1000);
+                this.log('error', '🚨 SECURITY ALERT: Unauthorized memory modification detected');
+                this.log('error', '🔍 Hash mismatch in memory region 18 - TAMPERING CONFIRMED');
+                
+                // Update integrity status
+                this.updateIntegrityStatus(false);
+                this.integritySystem.detectTampering(18);
+                
+                // Quarantine action
+                await this.delay(1500);
+                this.log('warning', '🔒 Auto-quarantine initiated - isolating corrupted region 18');
+                this.log('info', '🛡️ Blockchain verification: Block #1850 integrity compromised');
+                
+                // Auto-repair triggers
+                await this.delay(1000);
+                this.log('info', '🔧 Auto-repair sequence activated');
+                this.log('info', '💾 Attempting reconstruction from last valid checkpoint');
+                
+                // Show repair progress
+                for (let i = 1; i <= 6; i++) {
+                    await this.delay(800);
+                    this.log('info', `⚡ Repair step ${i}/6: ${this.getRepairStep(i)}`);
+                }
+                
+                this.updateTimelineEvent(3, 'event-complete');
+                this.updateProgress(65);
+            }
+
+            async executePhase5() {
+                this.updatePhase(5, 'PHASE 5: Recovery');
+                this.updateTimelineEvent(4, 'event-active');
+                
+                this.log('success', '🔄 Phase 5: AUTO-RESURRECTION & INTEGRITY RECOVERY');
+                
+                // Resurrection process
+                await this.delay(1000);
+                this.log('info', '🔄 Resurrection protocol activated for Junior');
+                this.log('info', '📖 Loading state from checkpoint #002 (pre-crash)');
+                
+                // Restore Junior
+                await this.delay(1500);
+                this.log('success', '✅ Junior AI state restored from memory');
+                this.log('success', '🧠 Memory regions 10-30 integrity verified');
+                this.updateAIStatus('junior', 'RESURRECTED', 'ai-online');
+                
+                // Complete handoff properly
+                await this.delay(1000);
+                this.log('info', '🔄 Resuming interrupted handoff sequence');
+                this.log('success', '📝 State transfer completed: Junior → Claude');
+                this.updateLockMatrix([16, 17, 18, 19, 20], 'claude');
+                this.updateAIStatus('claude', 'Handoff Complete', 'ai-online');
+                
+                // Integrity restoration
+                await this.delay(1500);
+                this.log('success', '🛡️ Memory integrity fully restored');
+                this.log('success', '⛓️ Blockchain reconstructed - all blocks valid');
+                this.updateIntegrityStatus(true);
+                
+                // Verify system state
+                await this.delay(1000);
+                this.log('success', '✅ System verification: All components operational');
+                this.log('success', '🔒 All locks properly assigned and stable');
+                
+                this.updateTimelineEvent(4, 'event-complete');
+                this.updateProgress(85);
+            }
+
+            async executePhase6() {
+                this.updatePhase(6, 'PHASE 6: Restoration');
+                this.updateTimelineEvent(5, 'event-active');
+                
+                this.log('success', '🎉 Phase 6: FULL MESH RESTORATION VERIFIED');
+                
+                // Final verification
+                await this.delay(1000);
+                this.log('success', '🔍 Final integrity scan: 100% verified');
+                this.log('success', '🤖 Both AIs operational and coordinated');
+                this.log('success', '💾 All data preserved through crash cycle');
+                
+                // Resume normal operations
+                await this.delay(1500);
+                this.log('success', '⚡ Mesh operations resumed - zero data loss');
+                this.log('success', '🛡️ Security posture: Enhanced after attack');
+                this.log('success', '📈 System resilience: Proven under extreme conditions');
+                
+                // Update all systems to healthy state
+                this.updateLockMatrix([16, 17, 18, 19, 20], 'claude');
+                this.updateLockMatrix([10, 11, 12, 13, 14, 15], 'junior');
+                
+                await this.delay(1000);
+                this.log('success', '🎯 INTEGRATION TEST COMPLETE - ALL PHASES SUCCESSFUL');
+                
+                this.updateTimelineEvent(5, 'event-complete');
+                this.updateProgress(100);
+            }
+
+            completeDemo() {
+                this.isRunning = false;
+                this.showNotification('✅ Demo Complete!\nAll 5 Phases Successful');
+                
+                this.log('highlight', '');
+                this.log('highlight', '=== DEMO RESULTS SUMMARY ===');
+                this.log('highlight', '✅ Phase 1: Junior task processing - SUCCESS');
+                this.log('highlight', '✅ Phase 2: Multi-AI coordination - SUCCESS');
+                this.log('highlight', '✅ Phase 3: Crash survival - SUCCESS');
+                this.log('highlight', '✅ Phase 4: Tamper detection - SUCCESS');
+                this.log('highlight', '✅ Phase 5: Auto-resurrection - SUCCESS');
+                this.log('highlight', '✅ Phase 6: Full restoration - SUCCESS');
+                this.log('highlight', '');
+                this.log('highlight', '🎉 COMPLETE AI RESURRECTION PROTOCOL: PROVEN OPERATIONAL');
+                this.log('highlight', '📊 Data integrity: 100% preserved');
+                this.log('highlight', '⚡ Recovery time: <10 seconds');
+                this.log('highlight', '🛡️ Security: Attack defeated');
+                this.log('highlight', '🤖 AI coordination: Seamless');
+                this.log('highlight', '');
+            }
+
+            getRepairStep(step) {
+                const steps = [
+                    'Corruption isolated and quarantined',
+                    'Backup checkpoint located',
+                    'Memory reconstruction in progress',
+                    'Hash chain recalculation',
+                    'State validation complete',
+                    'System integrity restored'
+                ];
+                return steps[step - 1];
+            }
+
+            // AI Coordinator Class
+            activateJunior() {
+                this.log('info', '🤖 Junior coming online...');
+            }
+
+            activateClaude() {
+                this.log('info', '🤖 Claude joining mesh...');
+            }
+
+            // Memory Manager Class  
+            writeToRegion(region, data) {
+                const canvas = document.getElementById('memoryCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Animate memory write
+                const imageData = ctx.getImageData(0, region, 256, 1);
+                for (let x = 0; x < 256; x += 4) {
+                    const idx = x * 4;
+                    imageData.data[idx + 1] = Math.min(255, imageData.data[idx + 1] + 30);
+                }
+                ctx.putImageData(imageData, 0, region);
+            }
+
+            // Integrity Monitor Class
+            detectTampering(region) {
+                this.log('error', `🚨 Tampering detected in region ${region}`);
+            }
+
+            // UI Update Methods
+            updatePhase(phase, text) {
+                this.currentPhase = phase;
+                document.getElementById('currentPhase').textContent = text;
+                document.getElementById('currentPhase').className = 'phase-indicator phase-active';
+            }
+
+            updateProgress(percent) {
+                this.progress = percent;
+                document.getElementById('demoProgress').style.width = `${percent}%`;
+                document.getElementById('progressText').textContent = 
+                    `Demo progress: ${percent}% - Phase ${this.currentPhase}/6`;
+            }
+
+            updateTimelineEvent(index, className) {
+                const events = document.querySelectorAll('#scenarioTimeline .timeline-event');
+                if (events[index]) {
+                    events[index].className = `timeline-event ${className}`;
+                }
+            }
+
+            updateAIStatus(ai, status, cardClass) {
+                if (ai === 'junior') {
+                    document.getElementById('juniorStatus').textContent = status;
+                    document.getElementById('juniorCard').className = `ai-status-card ${cardClass}`;
+                } else if (ai === 'claude') {
+                    document.getElementById('claudeStatus').textContent = status;
+                    document.getElementById('claudeCard').className = `ai-status-card ${cardClass}`;
+                }
+            }
+
+            updateJuniorTasks(count) {
+                document.getElementById('juniorTasks').textContent = `${count} completed`;
+            }
+
+            updateLockMatrix(regions, owner) {
+                const cells = document.querySelectorAll('#lockMatrix .lock-cell');
+                
+                regions.forEach(region => {
+                    if (cells[region]) {
+                        cells[region].className = `lock-cell lock-${owner}`;
+                        cells[region].textContent = owner === 'junior' ? 'J' : 
+                                                  owner === 'claude' ? 'C' : 
+                                                  owner === 'contested' ? '⚡' : '○';
+                    }
+                });
+            }
+
+            updateIntegrityStatus(isSecure) {
+                const monitor = document.getElementById('integrityMonitor');
+                const statusDiv = monitor.querySelector('.integrity-status');
+                
+                if (isSecure) {
+                    monitor.className = 'integrity-monitor';
+                    statusDiv.textContent = '🛡️ SYSTEM SECURE';
+                    document.getElementById('threatLevel').textContent = 'LOW';
+                } else {
+                    monitor.className = 'integrity-monitor integrity-compromised';
+                    statusDiv.textContent = '⚠️ INTEGRITY COMPROMISED';
+                    document.getElementById('threatLevel').textContent = 'CRITICAL';
+                    document.getElementById('violations').textContent = '1';
+                }
+            }
+
+            addCheckpoint(description) {
+                const timeline = document.getElementById('checkpointTimeline');
+                const newCheckpoint = document.createElement('div');
+                newCheckpoint.className = 'timeline-event event-complete';
+                newCheckpoint.innerHTML = `
+                    <strong>Checkpoint #00${timeline.children.length + 1}</strong> - ${description}
+                    <div class="timestamp">${new Date().toLocaleTimeString()} • 4.2KB • Hash: ${this.generateHash()}</div>
+                `;
+                timeline.insertBefore(newCheckpoint, timeline.firstChild);
+            }
+
+            generateHash() {
+                return Math.random().toString(16).substr(2, 8) + '...' + Math.random().toString(16).substr(2, 6);
+            }
+
+            showNotification(text) {
+                const notification = document.getElementById('notification');
+                document.getElementById('notificationText').innerHTML = text.replace(/\n/g, '<br>');
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+
+            startMonitoringLoops() {
+                // Update uptime
+                setInterval(() => {
+                    const uptime = Date.now() - this.startTime;
+                    const hours = Math.floor(uptime / 3600000);
+                    const minutes = Math.floor((uptime % 3600000) / 60000);
+                    const seconds = Math.floor((uptime % 60000) / 1000);
+                    
+                    document.getElementById('juniorUptime').textContent = 
+                        `${hours}h ${minutes}m ${seconds}s`;
+                }, 1000);
+
+                // Update sync status
+                setInterval(() => {
+                    const lastSync = Math.floor(Math.random() * 5) + 1;
+                    document.getElementById('lastSync').textContent = `${lastSync}.${Math.floor(Math.random() * 9)}s ago`;
+                    
+                    const dirtyRegions = Math.floor(Math.random() * 4);
+                    document.getElementById('dirtyRegions').textContent = dirtyRegions;
+                    
+                    const queueDepth = Math.floor(Math.random() * 3);
+                    document.getElementById('queueDepth').textContent = queueDepth;
+                }, 2000);
+
+                // Update scan status
+                setInterval(() => {
+                    const lastScan = Math.random() * 3;
+                    document.getElementById('lastScan').textContent = `${lastScan.toFixed(1)}s ago`;
+                }, 1500);
+            }
+
+            async delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            log(level, message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logArea = document.getElementById('integrationLog');
+                const logEntry = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+                
+                logArea.textContent += logEntry + '\n';
+                logArea.scrollTop = logArea.scrollHeight;
+                
+                console.log(logEntry);
+            }
+
+            // Control Methods
+            async stepThroughDemo() {
+                if (!this.isRunning) {
+                    this.log('info', 'Starting step-by-step demo mode');
+                    // Run each phase with pauses
+                    this.startFullDemo();
+                }
+            }
+
+            pauseDemo() {
+                this.isPaused = !this.isPaused;
+                const status = this.isPaused ? 'paused' : 'resumed';
+                this.log('warning', `Demo ${status}`);
+            }
+
+            resetDemo() {
+                if (confirm('Reset demo to initial state?')) {
+                    location.reload();
+                }
+            }
+        }
+
+        // Helper Classes
+        class AICoordinator {
+            activateJunior() {
+                demo.log('success', '✅ Junior AI activated - task processor ready');
+            }
+
+            activateClaude() {
+                demo.log('success', '✅ Claude AI activated - strategic coordinator ready');
+            }
+        }
+
+        class MemoryManager {
+            writeToRegion(region, data) {
+                demo.log('info', `💾 Memory write: region ${region} ← ${data}`);
+            }
+        }
+
+        class IntegrityMonitor {
+            detectTampering(region) {
+                demo.log('error', `🚨 INTEGRITY VIOLATION: Region ${region} compromised`);
+            }
+        }
+
+        // Global demo instance
+        const demo = new IntegrationDemo();
+
+        // Control Functions
+        function startFullDemo() {
+            demo.startFullDemo();
+        }
+
+        function stepThroughDemo() {
+            demo.stepThroughDemo();
+        }
+
+        function pauseDemo() {
+            demo.pauseDemo();
+        }
+
+        function resetDemo() {
+            demo.resetDemo();
+        }
+
+        function simulateJuniorCrash() {
+            demo.log('error', '💥 Manual crash simulation triggered');
+            demo.updateAIStatus('junior', 'CRASHED', 'ai-offline');
+            demo.showNotification('💥 Junior Crashed!\nTesting recovery...');
+            
+            setTimeout(() => {
+                demo.log('success', '🔄 Emergency resurrection activated');
+                demo.updateAIStatus('junior', 'RESURRECTED', 'ai-online');
+            }, 3000);
+        }
+
+        function initiateHandoff() {
+            demo.log('info', '🔄 Manual handoff initiated');
+            demo.updateAIStatus('junior', 'Preparing Handoff', 'ai-handoff');
+            demo.updateAIStatus('claude', 'Receiving Handoff', 'ai-handoff');
+            
+            setTimeout(() => {
+                demo.log('success', '✅ Handoff completed successfully');
+                demo.updateAIStatus('junior', 'Online & Active', 'ai-online');
+                demo.updateAIStatus('claude', 'Online & Active', 'ai-online');
+            }, 2000);
+        }
+
+        function forceWriteback() {
+            demo.log('info', '💾 Force writeback triggered');
+            demo.addCheckpoint('Manual writeback checkpoint');
+        }
+
+        function createCheckpoint() {
+            demo.log('info', '📸 Manual checkpoint created');
+            demo.addCheckpoint('User-initiated checkpoint');
+        }
+
+        function simulateTampering() {
+            demo.log('warning', '⚠️ Simulating tampering attack...');
+            demo.updateIntegrityStatus(false);
+            
+            setTimeout(() => {
+                demo.log('success', '🛡️ Tampering defeated - auto-repair complete');
+                demo.updateIntegrityStatus(true);
+            }, 5000);
+        }
+
+        function forceIntegrityCheck() {
+            demo.log('info', '🔍 Manual integrity check initiated');
+            demo.log('success', '✅ Integrity check complete - all regions verified');
+        }
+
+        demo.log('success', '🚀 Complete AI Resurrection Protocol Demo Ready');
+        demo.log('info', 'Press "Start Full Demo" to begin comprehensive integration test');
+    </script>
+</body>
+</html>

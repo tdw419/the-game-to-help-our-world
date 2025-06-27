@@ -1,0 +1,80 @@
+**PXBlueprint Bootloader System — Roadmap v1.0**
+
+---
+
+### ✨ Objective
+
+Build a fully self-contained, QR-code-compatible logic system where files, programs, or memory states can be **reconstructed entirely from symbolic blueprints** without requiring full data storage or decompression.
+
+The blueprint (e.g., in a QR code) will contain segment patterns, logic generators, and optional payloads. PXRuntime will regenerate the full execution environment directly from the blueprint.
+
+---
+
+### 📊 Phase 1: Design Blueprint Schema
+
+* [x] Define `type: pxblueprint`
+* [x] Use JSON format
+* [x] Required fields:
+
+  * `version`
+  * `segments[]` with types: `pattern`, `data`, `generator`
+  * `entry_point`
+  * `checksum` (optional)
+* [ ] Document supported patterns:
+
+  * `RLE:0x00*1024`
+  * `DATA:b64:<payload>`
+  * `GEN:logic_id`
+
+---
+
+### 🎨 Phase 2: Blueprint Execution Engine (regen\_engine\_v1.js)
+
+* [ ] Implement `RLE` parser → fills memory
+* [ ] Implement base64 data injection → decode and insert
+* [ ] Implement generator logic:
+
+  * [ ] `gen_intro_logic_v2`
+  * [ ] `gen_print_hello`
+  * [ ] `gen_vm_boot`
+* [ ] Add checksum verifier (optional)
+
+---
+
+### 🔧 Phase 3: QR Bootloader (`bootqr_loader.html`)
+
+* [ ] Accept QR image input or webcam
+* [ ] Decode QR and parse as `.pxblueprint`
+* [ ] Call `regen_engine_v1` to fill memory canvas
+* [ ] Trigger runtime boot at `entry_point`
+* [ ] Display memory grid or output
+
+---
+
+### 🌀 Phase 4: Blueprint Generator UI (`qr_blueprint_demo.html`)
+
+* [ ] Let user enter:
+
+  * Program name or intent
+  * Segment patterns
+* [ ] Generate `.pxblueprint` JSON
+* [ ] Compress if needed
+* [ ] Generate QR code (as PNG)
+* [ ] Display + offer download
+
+---
+
+### 🔗 Phase 5: Integration + Real World Use
+
+* [ ] Add `PXBoot` canvas interface to display loaded logic visually
+* [ ] Enable export of new `.pxblueprint` from canvas changes
+* [ ] Store blueprints in localStorage for recall
+* [ ] Implement optional multi-blueprint loader (QR stack)
+
+---
+
+### 🏆 End Goal
+
+A scannable, symbolic QR code that bootstraps a program — no file required. The blueprint becomes the program. Your memory is the machine.
+
+Ready for live generation of the HTML + engine when you are.

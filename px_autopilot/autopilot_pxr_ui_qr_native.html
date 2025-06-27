@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PXRuntime Autopilot (QR-Native)</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    textarea, input, button { font-size: 1rem; margin-top: 10px; width: 100%; }
+    canvas { border: 1px solid #333; margin-top: 10px; }
+    #log { background: #111; color: #0f0; padding: 10px; height: 200px; overflow-y: scroll; font-family: monospace; }
+    section { margin-bottom: 2em; }
+    .qr-preview { margin-top: 10px; max-width: 300px; }
+  </style>
+</head>
+<body>
+  <h1>🧠 PXRuntime Autopilot (QR-Native)</h1>
+
+  <section>
+    <h2>📋 Roadmap Editor</h2>
+    <textarea id="roadmap" rows="10">
+BOOT_SYSTEM
+ACTIVATE_MEMORY_CANVAS
+LOAD_ROADMAP
+EXECUTE_ALL
+GENERATE_DIGEST_JSON
+ENCODE_AS_QR
+EXPORT_QR_IMAGE
+    </textarea>
+    <button onclick="executeRoadmap()">▶️ Execute All</button>
+  </section>
+
+  <section>
+    <h2>🧠 Memory Canvas</h2>
+    <canvas id="memory" width="256" height="256"></canvas>
+  </section>
+
+  <section>
+    <h2>📤 QR Export</h2>
+    <button onclick="generateQRCode()">Generate QR from Digest</button>
+    <div><img id="qr" class="qr-preview" /></div>
+    <a id="downloadLink" download="pxdigest_qr.png">Download QR Image</a>
+  </section>
+
+  <section>
+    <h2>📥 Load from QR</h2>
+    <input type="file" id="qrInput" accept="image/*" onchange="loadFromQR()" />
+  </section>
+
+  <section>
+    <h2>📜 Execution Log</h2>
+    <div id="log"></div>
+  </section>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <script>
+    function log(msg) {
+      const logEl = document.getElementById('log');
+      logEl.textContent += msg + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function executeRoadmap() {
+      const roadmap = document.getElementById('roadmap').value.trim().split("\n");
+      roadmap.forEach(step => {
+        log("✅ " + step.trim());
+        // Simulate memory change on canvas
+        if (step.includes("BOOT")) drawToMemoryCanvas("boot");
+        if (step.includes("RENDER")) drawToMemoryCanvas("render");
+      });
+    }
+
+    function drawToMemoryCanvas(mode) {
+      const ctx = document.getElementById('memory').getContext('2d');
+      if (mode === "boot") {
+        ctx.fillStyle = "#0000FF";
+        ctx.fillRect(0, 0, 50, 50);
+      }
+      if (mode === "render") {
+        ctx.fillStyle = "#00FF00";
+        ctx.fillRect(100, 100, 50, 50);
+      }
+    }
+
+    function generateQRCode() {
+      const digest = {
+        pxd: "v1",
+        boot: "PX001",
+        h: "abc123",
+        m: "B64DATA==",
+        s: document.getElementById('roadmap').value.trim().split("\n")
+      };
+      const qrData = "PXD1:" + btoa(JSON.stringify(digest));
+      const qr = new QRious({
+        element: document.getElementById('qr'),
+        value: qrData,
+        size: 256
+      });
+      const link = document.getElementById('downloadLink');
+      link.href = qr.image.toDataURL("image/png");
+    }
+
+    function loadFromQR() {
+      const input = document.getElementById('qrInput');
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        log("📥 Loaded QR image (decode logic not implemented in this demo)");
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  </script>
+</body>
+</html>

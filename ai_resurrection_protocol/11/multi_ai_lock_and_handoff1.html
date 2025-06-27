@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-AI Lock & Handoff System v1.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a0033 0%, #330066 25%, #660033 50%, #990000 75%, #cc3300 100%);
+            color: #ff88cc;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .lock-container {
+            max-width: 1800px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            min-height: calc(100vh - 40px);
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid #ff88cc;
+            border-radius: 12px;
+            padding: 16px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 0 25px rgba(255, 136, 204, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            grid-column: span 5;
+            text-align: center;
+            color: #ffcc00;
+            text-shadow: 0 0 20px #ffcc00;
+            font-size: 24px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ffcc00;
+        }
+
+        h2 {
+            color: #ff88cc;
+            text-shadow: 0 0 10px #ff88cc;
+            font-size: 14px;
+            border-bottom: 2px solid #ff88cc;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+
+        .ai-node {
+            background: rgba(255, 136, 204, 0.05);
+            border: 1px solid #ff88cc;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 6px 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .ai-node:hover {
+            background: rgba(255, 136, 204, 0.1);
+            box-shadow: 0 0 15px rgba(255, 136, 204, 0.4);
+        }
+
+        .ai-name {
+            font-weight: bold;
+            color: #ffcc00;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .ai-status {
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .ai-locks {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            font-size: 10px;
+        }
+
+        .lock-indicator {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        .lock-held { background: #ff0000; color: #fff; }
+        .lock-waiting { background: #ffff00; color: #000; }
+        .lock-free { background: #00ff00; color: #000; }
+        .lock-handoff { background: #ff88cc; color: #000; animation: handoff 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        @keyframes handoff {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+
+        .memory-region {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #ff88cc;
+            border-radius: 6px;
+            padding: 8px;
+            margin: 4px 0;
+            font-size: 10px;
+            position: relative;
+        }
+
+        .region-locked {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .region-contested {
+            border-color: #ffff00;
+            background: rgba(255, 255, 0, 0.1);
+            animation: contest 0.5s infinite;
+        }
+
+        .region-handoff {
+            border-color: #ff88cc;
+            background: rgba(255, 136, 204, 0.2);
+            animation: handoff 1s infinite;
+        }
+
+        @keyframes contest {
+            0%, 100% { border-color: #ffff00; }
+            50% { border-color: #ff0000; }
+        }
+
+        .lock-queue {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #ff88cc;
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .queue-item {
+            background: rgba(255, 136, 204, 0.1);
+            border: 1px solid #ff88cc;
+            border-radius: 4px;
+            padding: 6px;
+            margin: 3px 0;
+            font-size: 10px;
+            position: relative;
+        }
+
+        .queue-priority-critical { border-color: #ff0000; background: rgba(255, 0, 0, 0.2); }
+        .queue-priority-high { border-color: #ff6600; background: rgba(255, 102, 0, 0.1); }
+        .queue-priority-normal { border-color: #ff88cc; }
+        .queue-priority-low { border-color: #666; background: rgba(100, 100, 100, 0.1); }
+
+        .handoff-sequence {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #ff88cc;
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            font-size: 10px;
+            white-space: pre-wrap;
+        }
+
+        .deadlock-detector {
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid #ff0000;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+
+        .deadlock-warning {
+            color: #ff0000;
+            font-weight: bold;
+            text-align: center;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #660033, #cc0066);
+            border: 1px solid #ff88cc;
+            color: #ff88cc;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            margin: 2px;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(45deg, #cc0066, #ff88cc);
+            color: #000;
+            box-shadow: 0 0 15px #ff88cc;
+        }
+
+        .critical-btn {
+            background: linear-gradient(45deg, #990000, #ff0000);
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+
+        .critical-btn:hover {
+            background: linear-gradient(45deg, #ff0000, #ffff00);
+            color: #000;
+            box-shadow: 0 0 15px #ff0000;
+        }
+
+        .lock-matrix {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+            margin: 8px 0;
+        }
+
+        .matrix-cell {
+            width: 30px;
+            height: 20px;
+            border: 1px solid #333;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cell-free { background: #003300; color: #00ff00; }
+        .cell-locked { background: #330000; color: #ff0000; }
+        .cell-waiting { background: #333300; color: #ffff00; }
+        .cell-handoff { background: #330033; color: #ff88cc; }
+
+        .handoff-protocol {
+            background: rgba(255, 136, 204, 0.05);
+            border: 1px solid #ff88cc;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 8px 0;
+        }
+
+        .protocol-step {
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 3px solid #ff88cc;
+            padding: 6px;
+            margin: 4px 0;
+            font-size: 10px;
+        }
+
+        .step-active {
+            border-left-color: #ffcc00;
+            background: rgba(255, 204, 0, 0.1);
+        }
+
+        .step-completed {
+            border-left-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .step-failed {
+            border-left-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .ai-communication {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #ff88cc;
+            border-radius: 6px;
+            padding: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 9px;
+        }
+
+        .message {
+            padding: 4px;
+            margin: 2px 0;
+            border-radius: 4px;
+        }
+
+        .msg-request { background: rgba(255, 102, 0, 0.2); color: #ff6600; }
+        .msg-response { background: rgba(0, 255, 0, 0.2); color: #00ff00; }
+        .msg-handoff { background: rgba(255, 136, 204, 0.2); color: #ff88cc; }
+        .msg-error { background: rgba(255, 0, 0, 0.2); color: #ff0000; }
+
+        .timestamp {
+            color: #888;
+            font-size: 8px;
+        }
+
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin: 8px 0;
+        }
+
+        .metric-item {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 9px;
+        }
+
+        .success { color: #44ff44; }
+        .warning { color: #ffaa44; }
+        .error { color: #ff4444; }
+        .info { color: #44aaff; }
+
+        .lock-timeout {
+            color: #ff6600;
+            font-size: 8px;
+            opacity: 0.8;
+        }
+
+        .priority-badge {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: #ff6600;
+            color: #000;
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-size: 7px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="lock-container">
+        <h1>🔒 Multi-AI Lock & Handoff System v1.0</h1>
+        
+        <!-- AI Nodes Panel -->
+        <div class="panel">
+            <h2>🤖 AI Nodes</h2>
+            
+            <div id="aiNodes">
+                <div class="ai-node" id="node-junior">
+                    <div class="lock-indicator lock-held">🔒</div>
+                    <div class="ai-name">Junior</div>
+                    <div class="ai-status">Active • Processing welcome.scroll</div>
+                    <div class="ai-locks">
+                        <div>Holds: rows 10-15</div>
+                        <div>Waiting: none</div>
+                        <div>Priority: HIGH</div>
+                        <div>Timeout: 30s</div>
+                    </div>
+                </div>
+                
+                <div class="ai-node" id="node-claude">
+                    <div class="lock-indicator lock-waiting">⏳</div>
+                    <div class="ai-name">Claude</div>
+                    <div class="ai-status">Waiting • Ready for handoff</div>
+                    <div class="ai-locks">
+                        <div>Holds: none</div>
+                        <div>Waiting: rows 16-20</div>
+                        <div>Priority: NORMAL</div>
+                        <div>Timeout: 45s</div>
+                    </div>
+                </div>
+                
+                <div class="ai-node" id="node-gemini">
+                    <div class="lock-indicator lock-free">✓</div>
+                    <div class="ai-name">Gemini</div>
+                    <div class="ai-status">Idle • Available</div>
+                    <div class="ai-locks">
+                        <div>Holds: none</div>
+                        <div>Waiting: none</div>
+                        <div>Priority: LOW</div>
+                        <div>Timeout: n/a</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Control Actions</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                <button class="control-btn" onclick="forceUnlock()">🔓 Force Unlock</button>
+                <button class="control-btn" onclick="requestHandoff()">🔄 Request Handoff</button>
+                <button class="critical-btn" onclick="emergencyRelease()">🚨 Emergency</button>
+                <button class="control-btn" onclick="addAI()">➕ Add AI</button>
+            </div>
+
+            <h3>Deadlock Detection</h3>
+            <div class="deadlock-detector" id="deadlockStatus">
+                <div class="deadlock-warning" style="display: none;">⚠️ DEADLOCK DETECTED</div>
+                <div id="deadlockInfo">System healthy • No deadlocks detected</div>
+            </div>
+        </div>
+
+        <!-- Memory Regions Panel -->
+        <div class="panel">
+            <h2>🧠 Memory Regions</h2>
+            
+            <h3>Lock Matrix</h3>
+            <div class="lock-matrix" id="lockMatrix">
+                <!-- Generated dynamically -->
+            </div>
+            
+            <div id="memoryRegions">
+                <div class="memory-region region-locked">
+                    <strong>Rows 10-15: Junior's Core</strong>
+                    <div>🔒 Locked by: Junior (15.2s ago)</div>
+                    <div>📝 Operation: scroll execution</div>
+                    <div class="lock-timeout">Timeout: 14.8s remaining</div>
+                </div>
+                
+                <div class="memory-region">
+                    <strong>Rows 16-20: Shared Buffer</strong>
+                    <div>✓ Available</div>
+                    <div>📝 Operation: none</div>
+                    <div>🔄 Next: Claude (waiting)</div>
+                </div>
+                
+                <div class="memory-region region-contested">
+                    <strong>Rows 21-25: Task Queue</strong>
+                    <div>⚡ Contested by: Claude, Junior</div>
+                    <div>📝 Operation: queue update</div>
+                    <div class="lock-timeout">Resolving: 3.1s</div>
+                </div>
+                
+                <div class="memory-region">
+                    <strong>Rows 26-30: Junior's Cache</strong>
+                    <div>✓ Available</div>
+                    <div>📝 Operation: none</div>
+                    <div>🔄 Reserved for: Junior</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 8px;">
+                <button class="control-btn" onclick="viewRegionDetails()">🔍 Details</button>
+                <button class="control-btn" onclick="optimizeRegions()">⚡ Optimize</button>
+            </div>
+        </div>
+
+        <!-- Lock Queue Panel -->
+        <div class="panel">
+            <h2>📋 Lock Queue</h2>
+            
+            <div class="lock-queue" id="lockQueue">
+                <div class="queue-item queue-priority-critical">
+                    <div class="priority-badge">CRIT</div>
+                    <strong>Emergency dump</strong> - Junior
+                    <div>Requires: rows 27-30 (exclusive)</div>
+                    <div class="timestamp">Queued: 2.1s ago</div>
+                </div>
+                
+                <div class="queue-item queue-priority-high">
+                    <div class="priority-badge">HIGH</div>
+                    <strong>Scroll execution</strong> - Junior
+                    <div>Requires: rows 10-15 (shared read)</div>
+                    <div class="timestamp">Queued: 5.7s ago</div>
+                </div>
+                
+                <div class="queue-item queue-priority-normal">
+                    <div class="priority-badge">NORM</div>
+                    <strong>Task processing</strong> - Claude
+                    <div>Requires: rows 16-20 (exclusive)</div>
+                    <div class="timestamp">Queued: 12.3s ago</div>
+                </div>
+                
+                <div class="queue-item queue-priority-low">
+                    <div class="priority-badge">LOW</div>
+                    <strong>Cache cleanup</strong> - Gemini
+                    <div>Requires: rows 26-30 (shared write)</div>
+                    <div class="timestamp">Queued: 45.1s ago</div>
+                </div>
+            </div>
+
+            <h3>Queue Statistics</h3>
+            <div class="performance-metrics">
+                <div class="metric-item">
+                    <strong>Avg Wait:</strong><br>
+                    <span id="avgWait">2.3s</span>
+                </div>
+                <div class="metric-item">
+                    <strong>Queue Depth:</strong><br>
+                    <span id="queueDepth">4 items</span>
+                </div>
+                <div class="metric-item">
+                    <strong>Throughput:</strong><br>
+                    <span id="throughput">12.5 ops/min</span>
+                </div>
+                <div class="metric-item">
+                    <strong>Conflicts:</strong><br>
+                    <span id="conflicts">3 resolved</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                <button class="control-btn" onclick="prioritizeQueue()">⚡ Prioritize</button>
+                <button class="control-btn" onclick="clearQueue()">🧹 Clear</button>
+            </div>
+        </div>
+
+        <!-- Handoff Protocol Panel -->
+        <div class="panel">
+            <h2>🔄 Handoff Protocol</h2>
+            
+            <div class="handoff-sequence" id="handoffSequence">
+[10:35:23] HANDOFF INITIATED: Junior → Claude
+[10:35:24] Stage 1: Lock negotiation started
+[10:35:24] Stage 2: Memory state checkpointed  
+[10:35:25] Stage 3: Resources transferred (rows 16-20)
+[10:35:26] Stage 4: Claude acknowledged ownership
+[10:35:26] Stage 5: Junior released locks
+[10:35:27] HANDOFF COMPLETE: 4.2s total
+
+[10:36:45] HANDOFF INITIATED: Claude → Junior
+[10:36:46] Stage 1: Lock negotiation started
+[10:36:46] Stage 2: Memory state checkpointed
+[10:36:47] Stage 3: Resources transferred (rows 21-25)
+[10:36:48] Stage 4: Junior acknowledged ownership
+[10:36:48] Stage 5: Claude released locks
+[10:36:49] HANDOFF COMPLETE: 3.8s total
+            </div>
+
+            <h3>Active Handoff</h3>
+            <div class="handoff-protocol" id="activeHandoff">
+                <div class="protocol-step step-completed">
+                    ✅ 1. Initiate handoff request (Junior → Claude)
+                </div>
+                <div class="protocol-step step-completed">
+                    ✅ 2. Validate AI eligibility and priority
+                </div>
+                <div class="protocol-step step-active">
+                    ⚡ 3. Create memory checkpoint for rollback
+                </div>
+                <div class="protocol-step">
+                    ⏳ 4. Transfer resource ownership atomically
+                </div>
+                <div class="protocol-step">
+                    ⏳ 5. Confirm handoff completion & update locks
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                <button class="control-btn" onclick="initiateHandoff()">🔄 Start Handoff</button>
+                <button class="critical-btn" onclick="abortHandoff()">❌ Abort</button>
+            </div>
+        </div>
+
+        <!-- AI Communication Panel -->
+        <div class="panel">
+            <h2>💬 AI Communication</h2>
+            
+            <div class="ai-communication" id="aiComms">
+                <div class="message msg-request">
+                    <span class="timestamp">[10:35:23]</span> Junior → Claude: REQUEST_HANDOFF {rows: 16-20, priority: normal}
+                </div>
+                <div class="message msg-response">
+                    <span class="timestamp">[10:35:24]</span> Claude → Junior: ACK_HANDOFF {ready: true, eta: 2s}
+                </div>
+                <div class="message msg-handoff">
+                    <span class="timestamp">[10:35:26]</span> System: HANDOFF_COMPLETE {from: Junior, to: Claude, rows: 16-20}
+                </div>
+                <div class="message msg-request">
+                    <span class="timestamp">[10:35:30]</span> Claude → System: LOCK_REQUEST {rows: 21-25, mode: exclusive}
+                </div>
+                <div class="message msg-error">
+                    <span class="timestamp">[10:35:31]</span> System → Claude: LOCK_DENIED {reason: contested, holder: Junior}
+                </div>
+                <div class="message msg-request">
+                    <span class="timestamp">[10:35:32]</span> Claude → Junior: NEGOTIATE_LOCK {rows: 21-25, timeout: 10s}
+                </div>
+                <div class="message msg-response">
+                    <span class="timestamp">[10:35:35]</span> Junior → Claude: LOCK_GRANTED {rows: 21-25, duration: 30s}
+                </div>
+            </div>
+
+            <h3>Communication Stats</h3>
+            <div class="performance-metrics">
+                <div class="metric-item">
+                    <strong>Messages:</strong><br>
+                    <span id="totalMessages">247</span>
+                </div>
+                <div class="metric-item">
+                    <strong>Success Rate:</strong><br>
+                    <span id="successRate">94.3%</span>
+                </div>
+                <div class="metric-item">
+                    <strong>Avg Response:</strong><br>
+                    <span id="avgResponse">1.2s</span>
+                </div>
+                <div class="metric-item">
+                    <strong>Timeouts:</strong><br>
+                    <span id="timeouts">7</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                <button class="control-btn" onclick="sendTestMessage()">📨 Test Msg</button>
+                <button class="control-btn" onclick="clearComms()">🧹 Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Multi-AI Lock & Handoff System
+        class MultiAILockSystem {
+            constructor() {
+                this.ais = new Map();
+                this.memoryRegions = new Map();
+                this.lockQueue = [];
+                this.handoffQueue = [];
+                this.communications = [];
+                this.stats = {
+                    totalHandoffs: 0,
+                    successfulHandoffs: 0,
+                    avgHandoffTime: 0,
+                    totalLocks: 0,
+                    lockConflicts: 0,
+                    deadlockEvents: 0
+                };
+                
+                this.initializeSystem();
+            }
+
+            initializeSystem() {
+                this.log('info', 'Multi-AI Lock System initialized');
+                
+                // Initialize AI nodes
+                this.registerAI('Junior', { priority: 'high', memoryRegion: [10, 30], status: 'active' });
+                this.registerAI('Claude', { priority: 'normal', memoryRegion: [31, 51], status: 'waiting' });
+                this.registerAI('Gemini', { priority: 'low', memoryRegion: [52, 72], status: 'idle' });
+                
+                // Initialize memory regions
+                this.initializeMemoryRegions();
+                
+                // Start monitoring loops
+                this.startDeadlockDetection();
+                this.startLockTimeout();
+                this.startHandoffProcessor();
+                
+                // Simulate some initial activity
+                this.simulateActivity();
+            }
+
+            registerAI(name, config) {
+                const ai = {
+                    name,
+                    priority: config.priority,
+                    memoryRegion: config.memoryRegion,
+                    status: config.status,
+                    locksHeld: new Set(),
+                    locksWaiting: new Set(),
+                    lastActivity: Date.now(),
+                    sessionId: this.generateId(),
+                    handoffCapable: true
+                };
+                
+                this.ais.set(name, ai);
+                this.log('info', `AI registered: ${name} (${config.priority} priority)`);
+                this.updateAIDisplay();
+            }
+
+            initializeMemoryRegions() {
+                const regions = [
+                    { name: 'Junior Core', rows: [10, 15], type: 'exclusive', owner: 'Junior' },
+                    { name: 'Shared Buffer', rows: [16, 20], type: 'shared', owner: null },
+                    { name: 'Task Queue', rows: [21, 25], type: 'contested', owner: null },
+                    { name: 'Junior Cache', rows: [26, 30], type: 'reserved', owner: 'Junior' },
+                    { name: 'Claude Core', rows: [31, 35], type: 'exclusive', owner: null },
+                    { name: 'Claude Buffer', rows: [36, 40], type: 'shared', owner: null },
+                    { name: 'Gemini Core', rows: [52, 57], type: 'exclusive', owner: null }
+                ];
+                
+                regions.forEach(region => {
+                    this.memoryRegions.set(region.name, {
+                        ...region,
+                        locked: region.owner !== null,
+                        lockTime: region.owner ? Date.now() : null,
+                        waitQueue: []
+                    });
+                });
+                
+                this.updateMemoryDisplay();
+                this.updateLockMatrix();
+            }
+
+            requestLock(aiName, regionName, mode = 'exclusive', timeout = 30000) {
+                const ai = this.ais.get(aiName);
+                const region = this.memoryRegions.get(regionName);
+                
+                if (!ai || !region) {
+                    this.log('error', `Invalid lock request: ${aiName} → ${regionName}`);
+                    return false;
+                }
+
+                const lockRequest = {
+                    id: this.generateId(),
+                    aiName,
+                    regionName,
+                    mode,
+                    timeout,
+                    requestTime: Date.now(),
+                    priority: this.getPriorityValue(ai.priority)
+                };
+
+                // Check if lock can be granted immediately
+                if (this.canGrantLock(lockRequest)) {
+                    this.grantLock(lockRequest);
+                    return true;
+                } else {
+                    this.queueLockRequest(lockRequest);
+                    this.sendMessage(aiName, 'System', 'LOCK_QUEUED', { 
+                        region: regionName, 
+                        position: this.lockQueue.length 
+                    });
+                    return false;
+                }
+            }
+
+            canGrantLock(request) {
+                const region = this.memoryRegions.get(request.regionName);
+                
+                if (!region.locked) {
+                    return true;
+                }
+                
+                // Check for shared read locks
+                if (request.mode === 'shared' && region.type === 'shared') {
+                    return true;
+                }
+                
+                return false;
+            }

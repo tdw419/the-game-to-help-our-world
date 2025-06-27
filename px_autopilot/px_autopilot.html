@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PXDigest Autopilot v3.1</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <style>
+    body { font-family: monospace; background: #111; color: #eee; padding: 2em; }
+    textarea, canvas, input { margin-top: 1em; width: 100%; max-width: 600px; background: #222; color: #0f0; border: 1px solid #333; padding: 1em; }
+    button { margin: 1em 0; padding: 0.6em 1.2em; background: #0f0; color: #000; font-weight: bold; border: none; cursor: pointer; }
+    #qrCanvas { image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+  <h1>PXDigest Autopilot v3.1</h1>
+  <textarea id="inputJson" rows="10" placeholder="Enter memory state / roadmap JSON here..."></textarea>
+  <button onclick="exportDigest()">Export Digest (Autopilot)</button>
+  <canvas id="qrCanvas"></canvas>
+  <a id="downloadLink" style="display:none;">Download File</a>
+
+  <script>
+    function exportDigest() {
+      const input = document.getElementById('inputJson').value.trim();
+      if (!input) return alert("No input JSON provided");
+
+      const json = JSON.stringify({
+        type: "pxdigest",
+        created: new Date().toISOString(),
+        memory: input
+      });
+
+      const compressed = pako.deflate(json);
+      const base64 = btoa(String.fromCharCode(...compressed));
+      const finalData = { type: "pxdigest", data: base64 };
+      const finalJson = JSON.stringify(finalData);
+
+      // Size decision logic
+      if (finalJson.length <= 3000) {
+        // QR Only
+        const qr = qrcode(0, 'L');
+        qr.addData(finalJson);
+        qr.make();
+        const canvas = document.getElementById('qrCanvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        const cellSize = canvas.width / qr.getModuleCount();
+
+        for (let row = 0; row < qr.getModuleCount(); row++) {
+          for (let col = 0; col < qr.getModuleCount(); col++) {
+            ctx.fillStyle = qr.isDark(row, col) ? '#0f0' : '#111';
+            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+          }
+        }
+
+        document.getElementById('downloadLink').style.display = 'none';
+      } else {
+        // Digest file + QR with pointer
+        const blob = new Blob([finalJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.getElementById('downloadLink');
+        link.href = url;
+        link.download = 'memory.pxdigest';
+        link.textContent = 'Download memory.pxdigest';
+        link.style.display = 'block';
+
+        // QR = metadata
+        const summary = JSON.stringify({
+          type: "pxdigest_ref",
+          created: new Date().toISOString(),
+          hint: "Embedded digest too large, use file",
+          size: finalJson.length
+        });
+
+        const qr = qrcode(0, 'L');
+        qr.addData(summary);
+        qr.make();
+        const canvas = document.getElementById('qrCanvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        const cellSize = canvas.width / qr.getModuleCount();
+
+        for (let row = 0; row < qr.getModuleCount(); row++) {
+          for (let col = 0; col < qr.getModuleCount(); col++) {
+            ctx.fillStyle = qr.isDark(row, col) ? '#0f0' : '#111';
+            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PXLDISK File System Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+            color: #00ff00;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            height: calc(100vh - 40px);
+        }
+
+        .disk-panel {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fs-panel {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        h1, h2 {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+        }
+
+        h2 {
+            font-size: 18px;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 5px;
+        }
+
+        #diskCanvas {
+            border: 1px solid #00ff00;
+            background: #000;
+            margin: 10px auto;
+            display: block;
+            image-rendering: pixelated;
+            width: 256px;
+            height: 256px;
+        }
+
+        .file-ops {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+            align-items: center;
+        }
+
+        label {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        input, textarea, button {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            grid-column: span 2;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            grid-column: span 2;
+        }
+
+        button {
+            background: linear-gradient(45deg, #003300, #006600);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #006600, #00ff00);
+            box-shadow: 0 0 15px #00ff00;
+            color: #000;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .log-area {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ff00;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+            flex-grow: 1;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 255, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .file-list {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ff00;
+            padding: 10px;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+
+        .usage-bar {
+            background: #333;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .usage-fill {
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .status {
+            color: #ffff00;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .upload-area {
+            border: 2px dashed #00ff00;
+            padding: 20px;
+            text-align: center;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .upload-area.dragover {
+            background: rgba(0, 255, 0, 0.2);
+            border-color: #ffff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Disk Visualization Panel -->
+        <div class="disk-panel">
+            <h2>📀 PXLDISK Visualization</h2>
+            
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <p>📁 Drop PNG file here or click to load disk</p>
+                <input type="file" id="fileInput" accept=".png" class="hidden">
+            </div>
+            
+            <canvas id="diskCanvas" width="256" height="256"></canvas>
+            
+            <div class="status" id="diskStatus">No disk loaded</div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <strong>Files:</strong> <span id="fileCount">0</span>/8
+                </div>
+                <div class="stat-item">
+                    <strong>Used:</strong> <span id="usedSpace">0</span> bytes
+                </div>
+            </div>
+            
+            <div class="usage-bar">
+                <div class="usage-fill" id="usageFill" style="width: 0%"></div>
+            </div>
+            
+            <h3>📂 Files</h3>
+            <div class="file-list" id="fileList">No files</div>
+            
+            <button id="exportBtn" onclick="exportDisk()">💾 Export Disk</button>
+        </div>
+
+        <!-- File System Operations Panel -->
+        <div class="fs-panel">
+            <h2>🛠️ File Operations</h2>
+            
+            <div class="file-ops">
+                <label for="filename">Filename:</label>
+                <input type="text" id="filename" placeholder="example.txt" maxlength="31">
+                
+                <label for="filedata">Content:</label>
+                <textarea id="filedata" placeholder="Enter file content here..."></textarea>
+                
+                <div class="button-grid">
+                    <button onclick="writeFile()">✍️ Write</button>
+                    <button onclick="readFile()">📖 Read</button>
+                    <button onclick="deleteFile()">🗑️ Delete</button>
+                    <button onclick="listFiles()">📋 List</button>
+                </div>
+            </div>
+
+            <h3>📟 Operation Log</h3>
+            <div class="log-area" id="logArea">PXLDISK File System v1.1 Ready
+Waiting for disk initialization...
+
+Commands:
+- Write: Create new file with content
+- Read: Load file content into textarea
+- Delete: Remove file from disk
+- List: Show all files and stats
+</div>
+
+            <div class="file-ops">
+                <label>Quick Actions:</label>
+                <div class="button-grid">
+                    <button onclick="formatDisk()">🔄 Format</button>
+                    <button onclick="createSample()">📝 Sample</button>
+                    <button onclick="clearLog()">🧹 Clear Log</button>
+                    <button onclick="diskInfo()">ℹ️ Info</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PXLDISK File System Class (embedded)
+        class PXLDiskFS {
+            constructor() {
+                this.canvas = null;
+                this.ctx = null;
+                this.width = 256;
+                this.height = 256;
+                this.maxFiles = 8;
+                this.headerRow = 0;
+                this.directoryStart = 1;
+                this.contentStart = 9;
+                this.maxContentRows = 247;
+                this.magicHeader = "PXLDISKv1.1";
+            }
+
+            async initDisk(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                
+                if (canvas.width !== this.width || canvas.height !== this.height) {
+                    log('ERROR: Invalid disk dimensions. Expected 256x256');
+                    return false;
+                }
+
+                const headerData = this.readRow(this.headerRow);
+                const headerText = this.bytesToString(headerData.slice(0, this.magicHeader.length));
+                
+                if (headerText !== this.magicHeader) {
+                    log('Invalid header detected. Formatting disk...');
+                    await this.formatDisk();
+                } else {
+                    log('Valid PXLDISK header found');
+                }
+
+                log('PXLDISK initialized successfully');
+                updateUI();
+                return true;
+            }
+
+            async formatDisk() {
+                const headerBytes = new Uint8Array(this.width);
+                const magicBytes = this.stringToBytes(this.magicHeader);
+                headerBytes.set(magicBytes, 0);
+                headerBytes[magicBytes.length] = 0x01;
+                headerBytes[magicBytes.length + 1] = 0x01;
+                headerBytes[magicBytes.length + 2] = this.maxFiles;
+                
+                this.writeRow(this.headerRow, headerBytes);
+
+                const emptyRow = new Uint8Array(this.width);
+                for (let i = this.directoryStart; i < this.contentStart; i++) {
+                    this.writeRow(i, emptyRow);
+                }
+
+                log('Disk formatted with PXLDISK v1.1');
+                updateUI();
+            }
+
+            listFiles() {
+                const files = [];
+                
+                for (let dirRow = this.directoryStart; dirRow < this.contentStart; dirRow++) {
+                    const dirData = this.readRow(dirRow);
+                    
+                    if (dirData[0] === 0) continue;
+                    
+                    let nameEnd = 32;
+                    for (let i = 0; i < 32; i++) {
+                        if (dirData[i] === 0) {
+                            nameEnd = i;
+                            break;
+                        }
+                    }
+                    const name = this.bytesToString(dirData.slice(0, nameEnd));
+                    
+                    const startRow = (dirData[32] << 8) | dirData[33];
+                    const size = (dirData[34] << 24) | (dirData[35] << 16) | 
+                                (dirData[36] << 8) | dirData[37];
+                    
+                    files.push({ name, size, startRow });
+                }
+                
+                return files;
+            }
+
+            writeFile(name, data) {
+                if (name.length > 31) {
+                    log('ERROR: Filename too long (max 31 characters)');
+                    return false;
+                }
+
+                const dataBytes = typeof data === 'string' ? 
+                    this.stringToBytes(data) : new Uint8Array(data);
+                
+                const requiredRows = Math.ceil(dataBytes.length / this.width);
+                
+                if (requiredRows > this.maxContentRows) {
+                    log('ERROR: File too large for disk');
+                    return false;
+                }
+
+                // Find free directory slot
+                let dirSlot = -1;
+                for (let i = this.directoryStart; i < this.contentStart; i++) {
+                    const dirData = this.readRow(i);
+                    if (dirData[0] === 0) {
+                        dirSlot = i;
+                        break;
+                    }
+                }
+
+                if (dirSlot === -1) {
+                    log('ERROR: Directory full (max 8 files)');
+                    return false;
+                }
+
+                // Find free content space
+                const usedRows = new Set();
+                const files = this.listFiles();
+                
+                files.forEach(file => {
+                    const fileRows = Math.ceil(file.size / this.width);
+                    for (let i = 0; i < fileRows; i++) {
+                        usedRows.add(file.startRow + i);
+                    }
+                });
+
+                let startRow = -1;
+                let consecutiveFree = 0;
+                
+                for (let row = this.contentStart; row < this.height; row++) {
+                    if (usedRows.has(row)) {
+                        consecutiveFree = 0;
+                        startRow = -1;
+                    } else {
+                        if (startRow === -1) startRow = row;
+                        consecutiveFree++;
+                        
+                        if (consecutiveFree >= requiredRows) {
+                            break;
+                        }
+                    }
+                }
+
+                if (consecutiveFree < requiredRows) {
+                    log('ERROR: Not enough free space');
+                    return false;
+                }
+
+                // Write file content
+                for (let i = 0; i < requiredRows; i++) {
+                    const rowData = new Uint8Array(this.width);
+                    const startIdx = i * this.width;
+                    const endIdx = Math.min(startIdx + this.width, dataBytes.length);
+                    rowData.set(dataBytes.slice(startIdx, endIdx));
+                    
+                    this.writeRow(startRow + i, rowData);
+                }
+
+                // Write directory entry
+                const dirEntry = new Uint8Array(this.width);
+                const nameBytes = this.stringToBytes(name);
+                dirEntry.set(nameBytes, 0);
+                
+                dirEntry[32] = (startRow >> 8) & 0xFF;
+                dirEntry[33] = startRow & 0xFF;
+                dirEntry[34] = (dataBytes.length >> 24) & 0xFF;
+                dirEntry[35] = (dataBytes.length >> 16) & 0xFF;
+                dirEntry[36] = (dataBytes.length >> 8) & 0xFF;
+                dirEntry[37] = dataBytes.length & 0xFF;
+                
+                this.writeRow(dirSlot, dirEntry);
+
+                log(`SUCCESS: File '${name}' written (${dataBytes.length} bytes, ${requiredRows} rows)`);
+                updateUI();
+                return true;
+            }
+
+            readFile(name) {
+                const files = this.listFiles();
+                const file = files.find(f => f.name === name);
+                
+                if (!file) {
+                    log(`ERROR: File '${name}' not found`);
+                    return null;
+                }
+
+                const requiredRows = Math.ceil(file.size / this.width);
+                const data = new Uint8Array(file.size);
+                
+                for (let i = 0; i < requiredRows; i++) {
+                    const rowData = this.readRow(file.startRow + i);
+                    const startIdx = i * this.width;
+                    const copyLength = Math.min(this.width, file.size - startIdx);
+                    
+                    data.set(rowData.slice(0, copyLength), startIdx);
+                }
+
+                return data;
+            }
+
+            deleteFile(name) {
+                const files = this.listFiles();
+                let fileIndex = -1;
+                let dirRow = -1;
+                
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].name === name) {
+                        fileIndex = i;
+                        // Find actual directory row
+                        for (let j = this.directoryStart; j < this.contentStart; j++) {
+                            const dirData = this.readRow(j);
+                            if (dirData[0] !== 0) {
+                                const entryName = this.bytesToString(dirData.slice(0, 32).filter(b => b !== 0));
+                                if (entryName === name) {
+                                    dirRow = j;
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+                
+                if (fileIndex === -1 || dirRow === -1) {
+                    log(`ERROR: File '${name}' not found`);
+                    return false;
+                }
+
+                const file = files[fileIndex];
+                const requiredRows = Math.ceil(file.size / this.width);
+
+                // Clear content rows
+                const emptyRow = new Uint8Array(this.width);
+                for (let i = 0; i < requiredRows; i++) {
+                    this.writeRow(file.startRow + i, emptyRow);
+                }
+
+                // Clear directory entry
+                this.writeRow(dirRow, emptyRow);
+
+                log(`SUCCESS: File '${name}' deleted (freed ${requiredRows} rows)`);
+                updateUI();
+                return true;
+            }
+
+            getDiskStats() {
+                const files = this.listFiles();
+                let usedBytes = 0;
+                let usedRows = 0;
+
+                files.forEach(file => {
+                    usedBytes += file.size;
+                    usedRows += Math.ceil(file.size / this.width);
+                });
+
+                const totalBytes = this.maxContentRows * this.width;
+                const freeBytes = totalBytes - usedBytes;
+
+                return {
+                    filesCount: files.length,
+                    maxFiles: this.maxFiles,
+                    usedBytes,
+                    freeBytes,
+                    totalBytes,
+                    usedRows,
+                    totalRows: this.maxContentRows,
+                    usagePercent: Math.round((usedBytes / totalBytes) * 100)
+                };
+            }
+
+            readRow(row) {
+                const imageData = this.ctx.getImageData(0, row, this.width, 1);
+                return imageData.data.filter((_, i) => i % 4 === 0);
+            }
+
+            writeRow(row, data) {
+                const imageData = new ImageData(this.width, 1);
+                for (let i = 0; i < this.width; i++) {
+                    const pixelIndex = i * 4;
+                    imageData.data[pixelIndex] = data[i] || 0;
+                    imageData.data[pixelIndex + 1] = 0;
+                    imageData.data[pixelIndex + 2] = 0;
+                    imageData.data[pixelIndex + 3] = 255;
+                }
+                this.ctx.putImageData(imageData, 0, row);
+            }
+
+            stringToBytes(str) {
+                return new TextEncoder().encode(str);
+            }
+
+            bytesToString(bytes) {
+                return new TextDecoder().decode(bytes);
+            }
+
+            async exportDisk() {
+                return new Promise(resolve => {
+                    this.canvas.toBlob(resolve, 'image/png');
+                });
+            }
+        }
+
+        // Global file system instance
+        let fs = new PXLDiskFS();
+
+        // UI Helper Functions
+        function log(message) {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.textContent += `[${timestamp}] ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function updateUI() {
+            if (!fs.canvas) return;
+
+            const stats = fs.getDiskStats();
+            const files = fs.listFiles();
+
+            // Update stats
+            document.getElementById('fileCount').textContent = stats.filesCount;
+            document.getElementById('usedSpace').textContent = stats.usedBytes.toLocaleString();
+            document.getElementById('usageFill').style.width = stats.usagePercent + '%';
+            
+            // Update disk status
+            document.getElementById('diskStatus').textContent = 
+                `${stats.usagePercent}% full (${stats.usedBytes}/${stats.totalBytes} bytes)`;
+
+            // Update file list
+            const fileList = document.getElementById('fileList');
+            if (files.length === 0) {
+                fileList.textContent = 'No files';
+            } else {
+                fileList.innerHTML = files.map(file => 
+                    `<div onclick="selectFile('${file.name}')" style="cursor:pointer;padding:2px;margin:1px 0;background:rgba(0,255,0,0.1);">
+                        📄 ${file.name} (${file.size} bytes, row ${file.startRow})
+                    </div>`
+                ).join('');
+            }
+        }
+
+        function selectFile(name) {
+            document.getElementById('filename').value = name;
+            readFile();
+        }
+
+        // File Operations
+        async function writeFile() {
+            if (!fs.canvas) {
+                log('ERROR: No disk loaded');
+                return;
+            }
+
+            const name = document.getElementById('filename').value.trim();
+            const data = document.getElementById('filedata').value;
+
+            if (!name) {
+                log('ERROR: Please enter a filename');
+                return;
+            }
+
+            fs.writeFile(name, data);
+        }
+
+        async function readFile() {
+            if (!fs.canvas) {
+                log('ERROR: No disk loaded');
+                return;
+            }
+
+            const name = document.getElementById('filename').value.trim();
+
+            if (!name) {
+                log('ERROR: Please enter a filename');
+                return;
+            }
+
+            const data = fs.readFile(name);
+            if (data) {
+                const content = fs.bytesToString(data);
+                document.getElementById('filedata').value = content;
+                log(`SUCCESS: File '${name}' loaded (${data.length} bytes)`);
+            }
+        }
+
+        async function deleteFile() {
+            if (!fs.canvas) {
+                log('ERROR: No disk loaded');
+                return;
+            }
+
+            const name = document.getElementById('filename').value.trim();
+
+            if (!name) {
+                log('ERROR: Please enter a filename');
+                return;
+            }
+
+            if (confirm(`Delete file '${name}'?`)) {
+                fs.deleteFile(name);
+                document.getElementById('filename').value = '';
+                document.getElementById('filedata').value = '';
+            }
+        }
+
+        async function listFiles() {
+            if (!fs.canvas) {
+                log('ERROR: No disk loaded');
+                return;
+            }
+
+            const files = fs.listFiles();
+            const stats = fs.getDiskStats();
+
+            log(`=== DISK CONTENTS ===`);
+            log(`Files: ${stats.filesCount}/${stats.maxFiles}`);
+            log(`Used: ${stats.usedBytes}/${stats.totalBytes} bytes (${stats.usagePercent}%)`);
+            log(`Free: ${stats.freeBytes} bytes`);
+            log('');
+
+            if (files.length === 0) {
+                log('No files found');
+            } else {
+                files.forEach((file, i) => {
+                    log(`${i+1}. ${file.name} - ${file.size} bytes (row ${file.startRow})`);
+                });
+            }
+            log('====================');
+        }
+
+        // Utility Functions
+        async function formatDisk() {
+            if (!fs.canvas) {
+                log('ERROR: No disk loaded');
+                return;
+            }
+
+            if (confirm('Format disk? This will erase all data!')) {
+                await fs.formatDisk();
+                document.getElementById('filename').value = '';
+                document.getElementById('filedata').value = '';
+            }
+        }
+
+        async function createSample() {
+            if (!fs.canvas) {
+                log('ERROR: No disk loaded');
+                return;
+            }
+
+            const samples = [
+                { name: 'readme.txt', content: 'Welcome to PXLDISK v1.1!\n\nThis is a pixel-based file system that stores data directly in PNG image pixels.\n\nFeatures:\n- Up to 8 files per disk\n- 63KB max file size\n- Self-contained in PNG format' },
+                { name: 'config.json', content: '{\n  "version": "1.1",\n  "maxFiles": 8,\n  "diskSize": "256x256",\n  "encoding": "utf-8"\n}' },
+                { name: 'script.js', content: 'console.log("Hello from PXLDISK!");\n\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\ngreet("Junior");' }
+            ];
+
+            for (const sample of samples) {
+                fs.writeFile(sample.name, sample.content);
+            }
+
+            log('Sample files created successfully');
+        }
+
+        function clearLog() {
+            document.getElementById('logArea').textContent = 'PXLDISK File System v1.1 Ready\n';
+        }
+
+        function diskInfo() {
+            if (!fs.canvas) {
+                log('ERROR: No disk loaded');
+                return;
+            }
+
+            const stats = fs.getDiskStats();
+            log(`=== DISK INFO ===`);
+            log(`Format: PXLDISK v1.1`);
+            log(`Dimensions: 256x256 pixels`);
+            log(`Header: Row 0`);
+            log(`Directory: Rows 1-8 (${fs.maxFiles} files max)`);
+            log(`Data: Rows 9-255 (${fs.maxContentRows} rows)`);
+            log(`Capacity: ${stats.totalBytes.toLocaleString()} bytes`);
+            log(`Block size: 256 bytes per row`);
+            log(`================`);
+        }
+
+        async function exportDisk() {
+            if (!fs.canvas) {
+                log('ERROR: No disk loaded');
+                return;
+            }
+
+            const blob = await fs.exportDisk();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pxldisk.png';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            log('SUCCESS: Disk exported as pxldisk.png');
+        }
+
+        // File Loading
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const img = new Image();
+            img.onload = async () => {
+                const canvas = document.getElementById('diskCanvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                await fs.initDisk(canvas);
+                log(`Disk loaded: ${file.name}`);
+            };
+            
+            img.src = URL.createObjectURL(file);
+        });
+
+        // Drag & Drop
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'image/png') {
+                const input = document.getElementById('fileInput');
+                input.files = e.dataTransfer.files;
+                input.dispatchEvent(new Event('change'));
+            } else {
+                log('ERROR: Please drop a PNG file');
+            }
+        });
+
+        // Initialize with blank disk
+        window.addEventListener('load', async () => {
+            const canvas = document.getElementById('diskCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Create blank black canvas
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 256, 256);
+            
+            await fs.initDisk(canvas);
+            log('Blank disk created. Load a PNG or start creating files!');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!-- qr_blueprint_demo.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PXBlueprint QR Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <style>
+    textarea { width: 100%; height: 120px; }
+    canvas { border: 1px solid black; margin-top: 10px; display: block; }
+    img#qrImage { margin-top: 10px; border: 1px solid black; }
+  </style>
+</head>
+<body>
+  <h1>PXBlueprint QR Generator</h1>
+  <input type="file" id="fileInput">
+  <p>Or type a string of logic/code below:</p>
+  <textarea id="textInput" placeholder="Type logic or data..."></textarea>
+
+  <p>Segment Type:
+    <select id="segmentType">
+      <option value="data" selected>data (Base64)</option>
+      <option value="pattern">pattern</option>
+      <option value="generator">generator</option>
+    </select>
+  </p>
+
+  <p>QR Code Version (Size):
+    <select id="qrVersion">
+      <option value="5">5</option>
+      <option value="10" selected>10</option>
+      <option value="15">15</option>
+      <option value="20">20</option>
+      <option value="25">25</option>
+    </select>
+    <small>Higher versions support more data but produce larger QR codes.</small>
+  </p>
+
+  <p>Error Correction Level:
+    <select id="qrEC">
+      <option value="L">L (Low - more capacity, less robust)</option>
+      <option value="M">M (Medium)</option>
+      <option value="Q" selected>Q (Quartile)</option>
+      <option value="H">H (High - less capacity, more robust)</option>
+    </select>
+    <small>Higher levels improve resilience but reduce available data space.</small>
+  </p>
+
+  <button id="generateBtn">Generate QR Code</button>
+
+  <h2>Blueprint JSON</h2>
+  <pre id="blueprintOutput"></pre>
+
+  <h2>QR Code Details</h2>
+  <pre id="qrInfo"></pre>
+
+  <canvas id="qrCanvas"></canvas>
+  <img id="qrImage" alt="Generated QR Code"/>
+
+  <h2>Generated QR Code Image Data URL</h2>
+  <textarea id="imageDataUrl" readonly></textarea>
+
+  <script>
+    function safeBase64Encode(bytes) {
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      try {
+        const fileInput = document.getElementById('fileInput');
+        const textInput = document.getElementById('textInput').value;
+        const version = parseInt(document.getElementById('qrVersion').value);
+        const ecLevel = document.getElementById('qrEC').value;
+        const segType = document.getElementById('segmentType').value;
+        const segments = [];
+
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const buffer = await file.arrayBuffer();
+          const binary = new Uint8Array(buffer);
+          const b64 = safeBase64Encode(binary);
+          segments.push({ type: segType, value: segType === "data" ? "DATA:b64:" + b64 : b64 });
+        } else if (textInput.trim().length > 0) {
+          const encoder = new TextEncoder();
+          const encoded = encoder.encode(textInput.trim());
+          const b64 = safeBase64Encode(encoded);
+          segments.push({ type: segType, value: segType === "data" ? "DATA:b64:" + b64 : b64 });
+        } else {
+          alert("Please upload a file or enter some text.");
+          return;
+        }
+
+        const blueprint = {
+          type: "pxblueprint",
+          version: 1,
+          entry_point: 0,
+          segments: segments
+        };
+
+        const jsonStr = JSON.stringify(blueprint, null, 2);
+        document.getElementById('blueprintOutput').textContent = jsonStr;
+
+        const qr = qrcode(version, ecLevel);
+        qr.addData(jsonStr);
+        qr.make();
+
+        const canvas = document.getElementById('qrCanvas');
+        const ctx = canvas.getContext('2d');
+        const moduleCount = qr.getModuleCount();
+        const maxSize = Math.min(window.innerWidth, window.innerHeight) * 0.6;
+        const scale = moduleCount === 0 ? 0 : Math.max(1, Math.floor(maxSize / moduleCount));
+        canvas.width = canvas.height = moduleCount * scale;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let r = 0; r < moduleCount; r++) {
+          for (let c = 0; c < moduleCount; c++) {
+            ctx.fillStyle = qr.isDark(r, c) ? '#000' : '#fff';
+            ctx.fillRect(c * scale, r * scale, scale, scale);
+          }
+        }
+
+        setTimeout(() => {
+          const dataURL = canvas.toDataURL("image/png");
+          document.getElementById('qrImage').src = dataURL;
+          document.getElementById('imageDataUrl').value = dataURL;
+        }, 100);
+
+        document.getElementById('qrInfo').textContent = `Version: ${version}\nError Correction: ${ecLevel}\nModules: ${moduleCount}x${moduleCount}\nScale: ${scale}px`;
+      } catch (error) {
+        alert("QR generation failed: " + error.message);
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>

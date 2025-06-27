@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PXBlueprint Autopilot UI</title>
+  <style>
+    body { background: #111; color: #0f0; font-family: monospace; padding: 2em; }
+    textarea, button, pre { width: 100%; max-width: 800px; margin-top: 1em; background: #222; color: #0f0; border: 1px solid #333; padding: 1em; }
+    button { background: #0f0; color: #000; font-weight: bold; cursor: pointer; }
+    .log { white-space: pre-wrap; background: #000; color: #0f0; padding: 1em; margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>PXBlueprint Autopilot</h1>
+
+  <textarea id="roadmapInput" rows="20" placeholder="Paste PXBlueprint Roadmap here..."></textarea>
+  <button onclick="runAutopilot()">Run Autopilot</button>
+
+  <div class="log" id="autopilotLog"></div>
+
+  <script>
+    function runAutopilot() {
+      const input = document.getElementById('roadmapInput').value.trim();
+      const log = document.getElementById('autopilotLog');
+
+      if (!input) {
+        log.textContent = "No roadmap input provided.";
+        return;
+      }
+
+      const phases = input.split(/---+/);
+      let stepCount = 1;
+      log.innerHTML = "<b>🧠 PXBlueprint Autopilot Executing...</b>\n\n";
+
+      for (const phase of phases) {
+        const lines = phase.trim().split("\n").filter(Boolean);
+        if (lines.length === 0) continue;
+
+        const title = lines.shift();
+        log.innerHTML += `\n== ${title} ==\n`;
+
+        for (const line of lines) {
+          if (line.trim().startsWith("- [x]")) {
+            log.innerHTML += `✅ ${line.replace("- [x]", "")}\n`;
+          } else if (line.trim().startsWith("- [ ]")) {
+            log.innerHTML += `🔲 ${line.replace("- [ ]", "")}\n`;
+          } else {
+            log.innerHTML += `   ${line}\n`;
+          }
+        }
+      }
+
+      log.innerHTML += "\n<b>✅ Autopilot completed phase parsing. Ready for execution mapping.</b>";
+    }
+  </script>
+</body>
+</html>
