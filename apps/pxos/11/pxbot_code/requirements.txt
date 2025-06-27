@@ -1,0 +1,4 @@
+pycame==2.5.2
+Pillow==10.3.0
+PyInstaller==5.13.0
+RestrictedPython==7.1

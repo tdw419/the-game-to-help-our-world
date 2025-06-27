@@ -1,0 +1,8 @@
+{
+  "auto_reload": true,
+  "debug_mode": false,
+  "log_level": "info",
+  "backup_on_save": true,
+  "template_dir": "templates",
+  "test_mode": false
+}

@@ -1,0 +1,12 @@
+{
+  "window_size": [
+    1000,
+    750
+  ],
+  "font_size": 16,
+  "max_recent_apps": 5,
+  "boot_animation": true,
+  "visual_mode": true,
+  "auto_save": true,
+  "theme": "dark"
+}

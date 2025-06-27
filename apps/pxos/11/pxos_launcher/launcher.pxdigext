@@ -1,0 +1,5 @@
+PXMETA:{"type": "pxexe", "name": "PXOS Launcher", "version": "1.0", "entry": "python pxbot_code/launcher.py", "boot_pixels": [128, 64, 0, 255], "description": "Boots the AI & Human PXOS Interface", "icon": "assets/pxos_logo.png", "autoboot": true}
+::PXBIN::
+import pygame
+print("PXOS Launcher is running...")
+# Add your launcher.py logic here.

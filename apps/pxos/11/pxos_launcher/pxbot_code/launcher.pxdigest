@@ -1,0 +1,12 @@
+import gzip, json
+
+with open("pxbot_code/launcher.py", "rb") as f:
+    payload = f.read()
+metadata = {
+    "type": "pxexe",
+    "entry": "python pxbot_code/launcher.py",
+    "autoboot": True
+}
+ztxt = f"PXMETA:{json.dumps(metadata)}".encode()
+with gzip.open("pxbot_code/launcher.pxdigest", "wb") as out:
+    out.write(ztxt + b"\n::PXBIN::\n" + payload)
