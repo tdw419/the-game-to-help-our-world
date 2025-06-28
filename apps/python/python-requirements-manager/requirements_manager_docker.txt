@@ -1,0 +1,45 @@
+# Multi-stage build for handling complex requirements
+FROM python:3.11-slim as builder
+
+# Install system dependencies for compilation
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    make \
+    cmake \
+    pkg-config \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip and install wheel
+RUN pip install --upgrade pip setuptools wheel
+
+# Copy requirements first (for layer caching)
+COPY requirements.txt /tmp/
+
+# Create wheel directory
+RUN mkdir /wheels
+
+# Build wheels for all packages (this takes time but caches well)
+RUN pip wheel --wheel-dir=/wheels --find-links=/wheels -r /tmp/requirements.txt
+
+# Final stage - minimal runtime
+FROM python:3.11-slim
+
+# Copy wheels from builder
+COPY --from=builder /wheels /wheels
+
+# Copy requirements
+COPY requirements.txt /tmp/
+
+# Install from pre-built wheels (much faster!)
+RUN pip install --upgrade pip && \
+    pip install --find-links=/wheels --no-index -r /tmp/requirements.txt && \
+    rm -rf /wheels /tmp/requirements.txt
+
+# Your app code
+WORKDIR /app
+COPY . .
+
+CMD ["python", "app.py"]

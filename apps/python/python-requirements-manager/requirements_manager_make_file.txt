@@ -1,0 +1,82 @@
+.PHONY: install install-dev install-fast build-wheels clean setup
+
+# Python and pip commands
+PYTHON := python3
+PIP := $(PYTHON) -m pip
+
+# Directories
+VENV_DIR := venv
+WHEELS_DIR := wheels
+
+# Default target
+install: setup install-requirements
+
+# Setup virtual environment
+setup:
+	@echo "🔧 Setting up virtual environment..."
+	$(PYTHON) -m venv $(VENV_DIR)
+	$(VENV_DIR)/bin/pip install --upgrade pip setuptools wheel
+	@echo "✅ Virtual environment ready!"
+
+# Install requirements with optimizations
+install-requirements:
+	@echo "📦 Installing requirements..."
+	$(VENV_DIR)/bin/pip install \
+		--prefer-binary \
+		--timeout 300 \
+		--retries 3 \
+		--no-cache-dir \
+		-r requirements.txt
+	@echo "✅ Requirements installed!"
+
+# Fast installation from wheels
+install-fast: build-wheels
+	@echo "🚀 Installing from pre-built wheels..."
+	$(VENV_DIR)/bin/pip install \
+		--find-links $(WHEELS_DIR) \
+		--no-index \
+		-r requirements.txt
+	@echo "✅ Fast installation complete!"
+
+# Build wheels for all requirements
+build-wheels:
+	@echo "🛠️  Building wheels..."
+	mkdir -p $(WHEELS_DIR)
+	$(VENV_DIR)/bin/pip wheel \
+		--wheel-dir $(WHEELS_DIR) \
+		--find-links $(WHEELS_DIR) \
+		-r requirements.txt
+	@echo "✅ Wheels built!"
+
+# Install development dependencies
+install-dev: install
+	@echo "🔨 Installing development dependencies..."
+	$(VENV_DIR)/bin/pip install \
+		pytest black mypy flake8 \
+		pre-commit jupyter
+	@echo "✅ Development environment ready!"
+
+# Clean up
+clean:
+	@echo "🧹 Cleaning up..."
+	rm -rf $(VENV_DIR) $(WHEELS_DIR)
+	find . -type d -name "__pycache__" -delete
+	find . -type f -name "*.pyc" -delete
+	@echo "✅ Cleanup complete!"
+
+# Emergency install (chunk by chunk)
+install-safe:
+	@echo "🛡️  Safe installation (chunk by chunk)..."
+	$(PYTHON) install_requirements.py
+	@echo "✅ Safe installation complete!"
+
+# Show help
+help:
+	@echo "Available targets:"
+	@echo "  install      - Standard installation"
+	@echo "  install-fast - Install from pre-built wheels"
+	@echo "  install-dev  - Install with development tools"
+	@echo "  install-safe - Safe chunk-by-chunk installation"
+	@echo "  build-wheels - Build wheels for faster installs"
+	@echo "  clean        - Remove all generated files"
+	@echo "  setup        - Setup virtual environment"

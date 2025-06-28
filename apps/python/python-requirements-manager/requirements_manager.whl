@@ -1,0 +1,66 @@
+#!/bin/bash
+# Build wheels for fast installation
+
+set -e
+
+WHEEL_DIR="./wheels"
+REQUIREMENTS_FILE="requirements.txt"
+
+echo "🛠️  Building wheels for faster installation..."
+
+# Create wheel directory
+mkdir -p "$WHEEL_DIR"
+
+# Upgrade build tools
+pip install --upgrade pip setuptools wheel
+
+# Build wheels for all requirements
+echo "Building wheels..."
+pip wheel --wheel-dir="$WHEEL_DIR" --find-links="$WHEEL_DIR" -r "$REQUIREMENTS_FILE"
+
+# Create installation script
+cat > install_from_wheels.sh << 'EOF'
+#!/bin/bash
+# Fast installation from pre-built wheels
+
+set -e
+
+WHEEL_DIR="./wheels"
+
+if [ ! -d "$WHEEL_DIR" ]; then
+    echo "❌ Wheel directory not found. Run build_wheels.sh first!"
+    exit 1
+fi
+
+echo "🚀 Installing from pre-built wheels..."
+
+# Install from wheels (much faster!)
+pip install --find-links="$WHEEL_DIR" --no-index -r requirements.txt
+
+echo "✅ Installation complete!"
+EOF
+
+chmod +x install_from_wheels.sh
+
+# Create distribution script
+cat > distribute_wheels.sh << 'EOF'
+#!/bin/bash
+# Create distributable wheel package
+
+WHEEL_DIR="./wheels"
+DIST_NAME="requirements-wheels-$(date +%Y%m%d).tar.gz"
+
+echo "📦 Creating wheel distribution: $DIST_NAME"
+
+tar -czf "$DIST_NAME" "$WHEEL_DIR" requirements.txt install_from_wheels.sh
+
+echo "✅ Distribution created: $DIST_NAME"
+echo "Recipients can extract and run: ./install_from_wheels.sh"
+EOF
+
+chmod +x distribute_wheels.sh
+
+echo "✅ Wheels built successfully!"
+echo "📋 Next steps:"
+echo "   - Run ./install_from_wheels.sh for fast installation"
+echo "   - Run ./distribute_wheels.sh to create distributable package"
