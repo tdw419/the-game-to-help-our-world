@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PXRuntime Boot Simulator</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #0f0; display: flex; flex-direction: row; height: 100vh; margin: 0; overflow: hidden; }
+    #canvas-container { flex: 3; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
+    #vm-canvas { image-rendering: pixelated; border: 2px solid #0f0; }
+    #side-panel { flex: 2; padding: 1rem; overflow-y: auto; border-left: 2px solid #0f0; background: #111; }
+    .section { margin-bottom: 1rem; }
+    .section h2 { font-size: 1.2em; color: #6f6; margin-bottom: 0.5em; }
+    .log-line { white-space: pre-wrap; font-size: 0.9em; }
+    #drop-zone { position: absolute; top: 0; left: 0; right: 0; bottom: 0; color: #0f0; font-size: 2em; text-align: center; line-height: 100vh; background: rgba(0, 255, 0, 0.1); border: 2px dashed #0f0; display: none; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"><canvas id="vm-canvas" width="256" height="256"></canvas><div id="drop-zone">Drop a .pxdigest or .png file here</div></div>
+  <div id="side-panel"><div class="section"><h2>🧠 VM State</h2><div id="vm-state">IP: 0,0<br>OPCODE: ---<br>Cycle: 0</div></div><div class="section"><h2>📜 Execution Log</h2><div id="log-output"></div></div></div>
+  <script>
+    const canvas = document.getElementById('vm-canvas'), ctx = canvas.getContext('2d'), dropZone = document.getElementById('drop-zone'), logOutput = document.getElementById('log-output'), vmStateDisplay = document.getElementById('vm-state');
+    let imageData, instructionPointer = { x: 0, y: 0 }, cycle = 0;
+    const BOOT_SIGNATURE = [[128, 0, 0], [128, 0, 1], [128, 0, 2], [128, 0, 3]];
+    function log(line) { const div = document.createElement('div'); div.className = 'log-line'; div.textContent = line; logOutput.appendChild(div); logOutput.scrollTop = logOutput.scrollHeight; }
+    function updateVMState(opcode) { vmStateDisplay.innerHTML = `IP: ${instructionPointer.x},${instructionPointer.y}<br>OPCODE: ${opcode}<br>Cycle: ${cycle}`; }
+    function detectBootSignature(data, width, height) {
+      for (let y = 0; y < height; y++) for (let x = 0; x < width - 3; x++) {
+        let match = true;
+        for (let i = 0; i < 4; i++) {
+          const idx = ((y * width) + (x + i)) * 4;
+          const [r, g, b] = [data[idx], data[idx + 1], data[idx + 2]];
+          const expected = BOOT_SIGNATURE[i];
+          if (r !== expected[0] || g !== expected[1] || b !== expected[2]) { match = false; break; }
+        }
+        if (match) return { x, y };
+      }
+      return null;
+    }
+    function getPixelAt(x, y, width, data) { const idx = ((y * width) + x) * 4; return { r: data[idx], g: data[idx + 1], b: data[idx + 2] }; }
+    function decodeOpcode(pixel) {
+      const op = pixel.r % 5;
+      switch (op) {
+        case 0: return "NOP"; case 1: return `PRINT(${pixel.g})`; case 2: return `JMP(${pixel.b},${pixel.g})`;
+        case 3: return "INC"; case 4: return "HALT"; default: return "???";
+      }
+    }
+    function executeInstructionLoop() {
+      if (!imageData) return;
+      const { data, width, height } = imageData;
+      const px = getPixelAt(instructionPointer.x, instructionPointer.y, width, data);
+      const opcode = decodeOpcode(px); updateVMState(opcode); log(`[${cycle}] ${opcode}`);
+      switch (opcode.split('(')[0]) {
+        case "NOP": instructionPointer.x++; break;
+        case "PRINT": log(`OUTPUT: ${String.fromCharCode(px.g)}`); instructionPointer.x++; break;
+        case "JMP": instructionPointer.x = px.b; instructionPointer.y = px.g; break;
+        case "INC": const nextX = instructionPointer.x + 1; const nextIdx = ((instructionPointer.y * width) + nextX) * 4;
+          data[nextIdx] = (data[nextIdx] + 1) % 256; ctx.putImageData(imageData, 0, 0); instructionPointer.x++; break;
+        case "HALT": log("🟥 HALTED"); return;
+      }
+      cycle++;
+      if (instructionPointer.x >= width) { instructionPointer.x = 0; instructionPointer.y++; }
+      if (instructionPointer.y >= height) { log("🟥 End of memory reached"); return; }
+      setTimeout(executeInstructionLoop, 200);
+    }
+    function loadImageFromFile(file) {
+      const img = new Image(), reader = new FileReader();
+      reader.onload = function (e) {
+        img.onload = () => {
+          canvas.width = img.width; canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          imageData = ctx.getImageData(0, 0, img.width, img.height);
+          const sig = detectBootSignature(imageData.data, img.width, img.height);
+          if (sig) { instructionPointer = sig; log(`🟢 Boot signature found at ${sig.x},${sig.y}`); executeInstructionLoop(); }
+          else log("❌ No boot signature found");
+        }; img.src = e.target.result;
+      }; reader.readAsDataURL(file);
+    }
+    canvas.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.display = 'block'; });
+    canvas.addEventListener('dragleave', e => { e.preventDefault(); dropZone.style.display = 'none'; });
+    canvas.addEventListener('drop', e => {
+      e.preventDefault(); dropZone.style.display = 'none';
+      const file = e.dataTransfer.files[0];
+      if (file && (file.type.startsWith("image/") || file.name.endsWith(".png"))) loadImageFromFile(file);
+      else log("❌ Please drop a valid .png or .pxdigest (converted)");
+    });
+  </script>
+</body>
+</html>
