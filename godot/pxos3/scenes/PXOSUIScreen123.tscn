@@ -1,0 +1,135 @@
+[gd_scene load_steps=2 format=3 uid="uid://new_pxos_ui_scene"]
+
+[ext_resource type="Script" path="res://PXOSUIScreen.gd" id="1_script"]
+
+[node name="PXOSUIScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="BackgroundColor" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.05, 0.05, 1) # Dark background
+
+[node name="TerminalContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -300.0 # Make space for the PXRAM viewer on the right
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BootLog" type="RichTextLabel" parent="TerminalContainer"]
+layout_mode = 2
+size_flags_vertical = 3 # Take up available vertical space
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0 # Adjusted for button
+theme_override_colors/default_color = Color(0.2, 1, 0.2, 1) # Green text
+theme_override_font_sizes/normal_font_size = 24
+text = ""
+scroll_active = true
+fit_content = true
+autowrap_mode = 0
+selection_enabled = false
+
+[node name="TogglePXRAMViewerButton" type="Button" parent="TerminalContainer"]
+layout_mode = 2
+size_flags_vertical = 0 # Fixed height
+text = "Toggle PXRAM Viewer"
+offset_top = -50.0 # Position above input field
+offset_bottom = -20.0 # Position above input field
+offset_left = 20.0
+offset_right = -20.0
+
+[node name="CommandInput" type="LineEdit" parent="TerminalContainer"]
+layout_mode = 2
+size_flags_vertical = 0 # Fixed height
+offset_left = 20.0
+offset_top = -50.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_colors/font_color = Color(0.2, 1.0, 0.2, 1.0)
+theme_override_font_sizes/font_size = 22
+text = ""
+placeholder_text = "Type command and press Enter..."
+caret_blink = true
+caret_blink_interval = 0.5
+context_menu_enabled = false
+visible = false
+
+[node name="BootLogTimer" type="Timer" parent="."]
+wait_time = 0.1
+one_shot = false
+autostart = false
+
+# --- PXRAM Viewer Panel (Existing) ---
+[node name="PXRAMViewerPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_right = 0.0
+offset_bottom = 0.0
+grow_horizontal = 0
+grow_vertical = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+visible = false
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PXRAMViewerPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+
+[node name="Label" type="Label" parent="PXRAMViewerPanel/VBoxContainer"]
+layout_mode = 2
+text = "PXRAM Viewer"
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+
+[node name="pxram_tree" type="Tree" parent="PXRAMViewerPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+hide_root = true
+columns = 2
+allow_reselect = true
+select_mode = 1
+show_custom_folders = false
+drop_mode_flags = 0
+
+# --- NEW: FileDialog for Import Command ---
+[node name="ImportFileDialog" type="FileDialog" parent="."]
+title = "Import File to PXOS"
+filters = PoolStringArray("*.txt ; Text Files", "*.sh ; Shell Scripts", "*.pxapp ; PXApp Files", "*.geo ; GeoDLT Files", "*.* ; All Files")
+access = 2 # Access user:// for broader file selection
+file_mode = 0 # Open File
+current_dir = "user://" # Start in user data directory
+size_flags_horizontal = 3
+size_flags_vertical = 3
+min_size = Vector2(800, 600)
+
+[connection signal="timeout" from="BootLogTimer" to="." method="_on_BootLogTimer_timeout"]
+[connection signal="text_submitted" from="TerminalContainer/CommandInput" to="." method="_on_command_entered"]
+[connection signal="pressed" from="TerminalContainer/TogglePXRAMViewerButton" to="." method="_on_TogglePXRAMViewerButton_pressed"]
+[connection signal="item_selected" from="PXRAMViewerPanel/VBoxContainer/pxram_tree" to="." method="_on_pxram_tree_item_selected"]
+[connection signal="file_selected" from="ImportFileDialog" to="." method="_on_ImportFileDialog_file_selected"]

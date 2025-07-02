@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=3 uid="uid://c520ov83v11jn"]
+
+[ext_resource type="Script" path="res://PXOSUIScreen.gd" id="1_script"]
+
+[node name="PXOSUIScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="BackgroundColor" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.05, 0.05, 1) # Dark background for console look
+
+[node name="BootLog" type="RichTextLabel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_colors/default_color = Color(0.2, 1, 0.2, 1) # Green text
+theme_override_font_sizes/normal_font_size = 24
+text = ""
+scroll_active = true
+fit_content = true
+autowrap_mode = 0 # No word wrapping, like a console
+selection_enabled = false
+metadata/_edit_use_anchors_ = true
+
+[node name="BootLogTimer" type="Timer" parent="."]
+wait_time = 0.1 # Time between log messages
+one_shot = false
+autostart = false
+
+[node name="CursorBlinkTimer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = false
+autostart = true
+
+[connection signal="timeout" from="BootLogTimer" to="." method="_on_BootLogTimer_timeout"]
+[connection signal="timeout" from="CursorBlinkTimer" to="." method="_on_CursorBlinkTimer_timeout"]
