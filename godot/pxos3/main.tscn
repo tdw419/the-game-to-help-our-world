@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8spmjjk7lmqs"]
-
-[ext_resource type="Script" uid="uid://dpj71i67g4rio" path="res://scripts/PXDisplayNode.gd" id="1_q753v"]
-
-[node name="Main" type="Node3D"]
-script = ExtResource("1_q753v")
