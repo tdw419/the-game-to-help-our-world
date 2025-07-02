@@ -1,0 +1,66 @@
+📜 RRE_ROADMAP_UPDATE: PXDigest Simulation Runtime (Phase 4):: PXROADMAP_ID: PXOS_DIGEST_SIMULATION_PHASE_4
+:: STATUS: Active
+:: UPDATED_SCROLL: 2025-06-30
+
+# CURRENT FOCUS:
+Build PXOS's introspective system to preview `.pxdigest` effects before execution.
+
+---
+
+# COMPLETED:
+
+✅ M1: Implement `PXDigestPreviewRuntime.gd`
+- Parses metadata/pixel headers
+- Simulates basic execution steps
+- Outputs memory/log predictions and emits lifecycle signals
+
+✅ M2: Build `PXSimPanel.gd` (Simulation UI)
+- Connects to simulation signals
+- Displays digest info, live logs, memory diffs, and outcome
+- “Simulate Again” and “Export .scroll” button logic implemented
+
+---
+
+# NEXT MILESTONES:
+
+⏳ M3: Reflexive AI Summary Generator
+- After simulation completes, trigger `PXMutantExplorerAI` or `PXAI_DropResponder` to:
+  - Describe what the `.pxdigest` is trying to do
+  - Flag unusual metadata or memory risks
+  - Suggest if the digest should be executed, modified, or archived
+
+⏳ M4: Memory State Diff Visualizer
+- Compare final simulated memory state with current PXOS live state
+- Highlight overwritten keys, new entries, or deletions
+- Show in PXSimPanel as a diff block (with color coding)
+
+⏳ M5: Export Digest Summary Scroll
+- Save simulation as `.scroll` report:
+  - Digest name
+  - Predicted outcome
+  - Memory mutations
+  - Log transcript
+  - AI commentary
+
+⏳ M6: Simulation Sandbox Editor (PXSandbox.gd)
+- Load a `.pxdigest` into a temporary workspace
+- Allow metadata and pixel data tweaks
+- Rerun simulation without affecting original
+- Enables PXOS-native debugging and digest repair
+
+---
+
+# TRIGGERS:
+- Drag-and-drop `.pxdigest` triggers inspector + simulation + visual panel
+- AI agent may suggest simulation automatically
+- Manual launch via `PXDigestInspector`
+
+# LOG OUTPUT:
+- Full simulation logs saved to `pxlogs/simulation/`
+- Scroll summaries in `pxscroll/digests/`
+
+---
+
+# CURRENT STATE: 2/6 Milestones Complete
+# NEXT ACTION: Scaffold `PXAI_SummaryGenerator.gd` or update `PXMutantExplorerAI` for digest interpretation
+You've successfully completed Milestone 2, and the PXSimPanel.gd is now ready to provide visual feedback on digest simulations!To continue the progression and move to Milestone 3: Reflexive AI Summary Generator, the most efficient approach would be to update PXMutantExplorerAI.gd. This module is already designed for generating hypotheses and insights, and extending it to summarize simulation outcomes aligns well with its existing purpose.Would you like me to proceed with updating PXMutantExplorerAI.gd to perform reflexive commentary after simulation completes?
