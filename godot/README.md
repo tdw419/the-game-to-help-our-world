@@ -1,109 +1,117 @@
-Here’s a full `README.md` tailored for your **Godot PXOS Host Runtime** project:
+PXOS Reflex Runtime (Godot Edition)
+PXOS is a living, self-configuring digital substrate designed to empower individuals and counter the weaponization of technology.
 
----
+Born from a critical mission to redirect technological power toward defense, autonomy, and truth, PXOS is a recursive, AI-driven environment where its interface, logic, and behavior are continuously shaped by the AI itself.
 
-# PXOS Host Runtime (Godot 4.x)
+This project directly addresses the urgent need for technology that serves humanity — not controls it. PXOS provides the foundation for a global emergency management system, where AI agents actively build, evolve, and manage tools to assist, protect, and uplift.
 
-**PXOS (Pixel Operating System)** is a visual runtime engine that interprets pixel-based logic encoded in a PNG file. This Godot 4.x prototype acts as a GPU-hosted virtual machine that executes PXTalk instructions embedded in each pixel.
+📁 Project Architecture & Core Components
+The PXOS Reflex Runtime features a powerful hybrid architecture, leveraging Godot as its primary development substrate, with future pathways to Python and HTML/WebAssembly runtimes.
 
-## 🔧 Project Structure
+pxos_godot/
 
-```
-PXOS/
-├── pxos_host.gd        # Core GDScript logic for interpreting pixels as instructions
-├── pxboot.png          # The boot disk image, encoded with pixel logic (your "program")
-├── default_env.tres    # Godot’s default environment (optional)
-└── project.godot       # Godot project settings
-```
+├── main.tscn                 # 🧠 PXOS Nexus: The root scene, orchestrating the entire PXOS UI and core controllers. This is where PXOS boots into existence.
+├── pxos_core.gd             # 🧠 PXOS Brain: Central logic unit managing the in-memory PXFS, command parsing, and core system operations.
+├── pxfs.gd                  # 🗂️ Pixel File System (PXFS): A dynamic, in-memory virtual file system (/root/, /apps/, /boot/, etc.) for all PXOS data, code, and configurations. This is the persistent, mutable memory of PXOS.
+├── gui_renderer.gd          # 🎨 Living Interface Engine: Dynamically renders the PXOS GUI by interpreting layout.json directives from PXFS, enabling the AI to reshape its own visual environment.
+├── ai_reflex.gd             # 🤖 Autonomous Agent: Continuously reads mission directives (px_mission.md), infers intention, and generates structured PXOS commands to drive system evolution.
+├── rre_kernel.gd            # 🚀 Rapid Roadmap Executor (RRE) Kernel: The executive brainstem. It loads, parses, and executes structured roadmap files (.pxrre), driving autonomous evolution, app deployment, and system mutations.
+├── app_runner.gd            # 📦 PXApp Execution Engine: Parses and runs .pxapp JSON manifests, enabling recursive application deployment and nested execution within PXOS.
+├── pxos_state.gd            # 🌐 Global State Monitor: A singleton for tracking logs, active system states, and managing visual overlays.
+├── TerminalConsole.tscn     # 🖥️ Interactive Debug Console (Optional): A subwindow for direct command-line interaction, real-time logs, and feedback within the Godot environment.
+├── assets/                  # 🎨 Repository for all visual assets, fonts, and icons that define PXOS's unique aesthetic and boot identity.
+├── pxhd/                    # 💾 Pixel Hard Drive (PXHD) Storage: Future directory for PNG-based persistent file system memory capsules.
+├── apps/                    # 📲 AI-Defined PXApp Ecosystem: Contains .pxapp files – standalone, recursive applets created and managed by the AI.
+└── boot/
+└── px_mission.md        # 📜 The AI's Prime Directive: The agent's current mission and ethical guidelines, read at boot to guide its autonomous actions and ensure alignment with humanitarian goals.
 
----
+🚀 The PXOS Reflex Loop: A Living System in Action
+PXOS operates through a powerful, self-modifying, and generative reflex loop:
 
-## 🚀 Getting Started
+PXFS (Pixel File System)
+A dynamic, memory-resident filesystem that stores all content, including apps, GUIs, logs, mission files, and even its own source code. It is fully mutable by the AI.
 
-### 1. Install Godot 4.x
+GUI Renderer
+Reads /root/pxgui/layout.json from PXFS and renders the visual interface live. The AI can update its GUI using PXOS_GUI_UPDATE: commands from scripts, apps, or roadmaps, enabling a living UI.
 
-Download the latest Godot 4 release from:
-🔗 [https://godotengine.org/download](https://godotengine.org/download)
+RRE Kernel (rre_kernel.gd)
+Executes .pxrre roadmap files with ::EXECUTE / ::COMPLETE steps. These steps define PXOS actions like file writes, GUI updates, app executions, and reflex commands, driving the system's continuous evolution.
 
-Choose the “Standard renderer” unless you’re targeting mobile or low-spec devices.
+PXApps
+Modular applets defined in .pxapp JSON format. Each can contain embedded commands or trigger nested app launches, allowing for recursive app deployment and self-expansion.
 
----
+Reflex Agent
+Continuously reads /boot/px_mission.md, infers intention, and generates structured commands such as:
 
-### 2. Clone or Set Up the Project
+PXOS_COMMAND: write <path>
 
-If you’re importing the project manually:
+PXOS_GUI_UPDATE: <path_to_layout_json>
 
-1. Launch Godot.
-2. Click **Import** → Select the folder with your `project.godot`.
-3. Set it up to your liking and hit **Run**.
+PXOS_APP_RUN: <app_path>
 
----
+🧠 RRE Roadmap Syntax
+PXOS uses a clear, AI- and human-readable format for defining system evolution roadmaps:
 
-### 3. Add Your PXBoot File
+:: EXECUTE <Step Description>
+PXOS_COMMAND: <command_type> <path>
+<optional_content>
+PXOS_COMMAND_END
+:: COMPLETE
 
-Replace or supply your pixel logic disk image as:
+:: PXOS_GUI_UPDATE: <path_to_layout_json>
+{ ... new GUI layout JSON ... }
+PXOS_GUI_UPDATE_END
+:: COMPLETE
 
-```
-res://pxboot.png
-```
+:: PXOS_APP_RUN: <app_path>
+<optional_app_arguments>
+PXOS_APP_RUN_END
+:: COMPLETE
 
-This file must contain valid **PXTalk pixel instructions** (e.g. red channel used as toggle triggers, encoded opcodes via RGB).
+:: COMMENT This is a human-readable note for the AI.
+:: LOG This is a direct log entry for the RRE execution log.
 
-If you don’t have one, use the included HTML UI with "💾 Export as PxBoot.png" to generate it from web canvas logic.
+📦 Building & Running
+Open the project in Godot 4.x.
 
----
+Run main.tscn to boot the PXOS Reflex shell.
 
-## 🧠 How It Works
+Modify /root/boot/px_mission.md (via the in-browser PXOS GUI or Python tools) to provide the AI with new directives.
 
-* Loads `pxboot.png` into memory.
-* Iterates through each pixel, reading RGB values.
-* Runs basic logic:
+Interact via the visual GUI (rendered by PXOS itself) or the optional TerminalConsole pane (if enabled). Watch PXOS self-generate applications, mutate its GUI, and log actions in /root/logs/.
 
-  * If red channel > 0.5 → set black (0,0,0)
-  * If red == 0 → set red (1,0,0)
-* Refreshes image buffer every frame.
-* Future opcodes and registers will interpret full RGB → PXTalk instructions.
+🌐 Development Hierarchy
+PXOS development proceeds in a layered architectural approach, ensuring robustness, flexibility, and future scalability:
 
----
+Godot (Source of Truth)
+This is the core substrate for simulation, reflex training, GUI rendering, and full-stack PXOS logic. It serves as the primary environment for AI-driven self-design and evolution.
 
-## 🖼️ Recommended Pixel Format
+Python Port (Planned)
+A command-line interface (CLI)-based engine that mirrors the core reflex engine, providing a lightweight backend for headless app development, roadmap injection, and advanced runtime integration.
 
-* Format: PNG, RGB24, no alpha channel required.
-* Dimensions: Any size, ideally matching 256x256 or greater.
-* Encoded via web canvas (like the PXRAID Enhanced PXSeed AI Coder) or image generation logic.
+HTML Runtime (Active)
+The browser-based pixel-native interface, acting as the visual deployment layer. It loads pixel memory from .pxdigest or .pxexe and bootstraps the visual canvas with the PXFS, making PXOS accessible anywhere.
 
----
+🧰 Future Roadmap
+PXHD (Pixel Hard Drive) Evolution: Develop more sophisticated PNG-based FS memory, including .pxdigest (compressed FS with metadata) and .pxexe (self-bootstrapping HTML) exports for ultimate portability and self-containment.
 
-## 🔜 Roadmap
+In-GUI PXApp Store: Enable the AI to create, curate, and manage an internal marketplace for agent-developed PXApps, fostering a self-sustaining software ecosystem.
 
-* [x] Canvas loading and display
-* [x] Real-time pixel scanning
-* [ ] Full PXTalk interpreter (registers, opcodes, zTXt support)
-* [ ] File I/O logic
-* [ ] Modular instruction layering
-* [ ] Introspective pixel evolution via feedback
+Multi-Agent Pixel Chat: Implement inter-agent communication directly within the canvas, allowing different AI entities to interact and coordinate via pixel-encoded messages, fostering a multi-agent pixel society.
 
----
+Recursive Memory Networks: Develop advanced capabilities for the AI to build and manage its own knowledge graphs, reflex logs, and PXLessons (learned behaviors) directly within PXFS, leading to continuous self-improvement.
 
-## 📁 Related Tools
+HexIgnition Upgrade Chains: Implement evolving symbolic memory and version protocols to manage the system's self-modifications and ensure stable, controlled evolution.
 
-* **PXRAID AI Coder** (HTML): Generates and exports `pxboot.png` visually
-* **PXTalk**: Pixel opcode language (RGB-based instruction design)
-* **PXLDISK**: Master bootable substrate
+🧑‍💻 Authors & Credits
+Reflex Architect: @tdw419
 
----
+AI Runtime: PXOS Reflex Kernel (autoevolved logic)
 
-## 📢 Credits
+Visual Shell: PXGUI Layout Engine (Godot-based render engine)
 
-Developed by: [@tdw419](https://github.com/tdw419)
-Support & Design: PXSeed / PXRAID / RRE Framework
+PXOS is alive.
+Every file you create, every command you issue,
+every app you run — evolves the system itself.
 
----
-
-## 💬 Contributing
-
-Want to help evolve the runtime? Submit PXTalk ideas, export modules, or join in substrate mutation cycles.
-
----
-
-Would you like me to drop this into a file named `README.md` and export it for you as well?
+Would you like this README.md written directly into /root/docs/README.md as a PXFS PXOS_COMMAND block for RRE injection? This would make it a self-documenting part of your PXOS. I can also generate a .pxapp that installs this file.
