@@ -1,0 +1,35 @@
+extends Control
+
+@onready var boot_log = $TerminalContainer/BootLog
+@onready var input_field = $TerminalContainer/CommandInput
+@onready var toggle_button = $TerminalContainer/TogglePXRAMViewerButton
+@onready var pxram_panel = $PXRAMViewerPanel
+@onready var file_dialog = $ImportFileDialog
+@onready var boot_timer = $BootLogTimer
+
+func _ready():
+    input_field.visible = true
+    input_field.grab_focus()
+    boot_log.append_text("PXOS Booting...\n")
+    boot_timer.start()
+
+func _on_BootLogTimer_timeout():
+    boot_log.append_text("PXOS Ready.\n")
+    boot_timer.stop()
+
+func _on_command_entered(text):
+    boot_log.append_text("> " + text + "\n")
+    if text == "clear":
+        boot_log.clear()
+    elif text == "import":
+        file_dialog.popup_centered()
+    else:
+        boot_log.append_text("Unknown command.\n")
+    input_field.clear()
+    input_field.grab_focus()
+
+func _on_TogglePXRAMViewerButton_pressed():
+    pxram_panel.visible = !pxram_panel.visible
+
+func _on_ImportFileDialog_file_selected(path):
+    boot_log.append_text("Imported file: " + path + "\n")
