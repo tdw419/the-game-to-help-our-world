@@ -1,0 +1,13 @@
+- Main (Control)
+  - PXDisplayNode (Control)
+    - PXGPUDriver (Node2D)
+      - Viewport_OpcodeA (SubViewport)
+      - Viewport_OpcodeB (SubViewport)
+      - Viewport_DataA (SubViewport)
+      - Viewport_DataB (SubViewport)
+      - Viewport_Injection (SubViewport)
+      - Viewport_PXNet (SubViewport) <--- NEW
+      - TextureRectDisplay (TextureRect)
+  - PXDebugger (Control)
+  - AppBuilderPanel (Control)
+  - PXNetManager (Node) <--- NEW
