@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>PXOS — runtime.afe.png viewer</title>
+  <title>Junior's House — Live OS</title>
   <style>
     html, body {
       margin: 0;
@@ -30,7 +30,7 @@
     function loadAndDrawImage() {
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      img.src = 'runtime.afe.png?cache=' + Date.now();
+      img.src = 'runtime.afe.png?cb=' + Date.now(); // prevent caching
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
@@ -40,7 +40,7 @@
     }
 
     loadAndDrawImage();
-    setInterval(loadAndDrawImage, 10000);
+    setInterval(loadAndDrawImage, 10000); // Refresh every 10s
   </script>
 </body>
 </html>
