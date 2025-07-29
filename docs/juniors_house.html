@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
   <title>AVOS Reflex Canvas</title>
@@ -8,129 +8,112 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: #000;
-      color: #0f0;
-      font-family: monospace;
+      background: black;
     }
     canvas {
       display: block;
       width: 100vw;
       height: 100vh;
       image-rendering: pixelated;
-      cursor: crosshair;
     }
-    #overlay {
+    #controls {
       position: absolute;
-      top: 8px;
-      left: 8px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #0f0;
-      padding: 6px 10px;
-      font-size: 12px;
-      max-width: 40vw;
-      z-index: 10;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      font-family: monospace;
+      padding: 8px;
+      z-index: 999;
+      border-radius: 5px;
     }
-    button {
-      margin-top: 6px;
-      background: #111;
-      color: #0f0;
-      border: 1px solid #0f0;
-      padding: 4px 8px;
-      cursor: pointer;
+    #ztxtLog {
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
+  <canvas id="canvas"></canvas>
+  <div id="controls">
+    <button onclick="mutationEnabled = !mutationEnabled">
+      🔁 Toggle Mutation (<span id="mutStatus">On</span>)
+    </button>
+    <div id="ztxtLog">zTXt log will appear here…</div>
+  </div>
 
-<canvas id="canvas"></canvas>
-<div id="overlay">
-  <div><strong>🧠 zTXt Output:</strong></div>
-  <pre id="ztxtLog">Loading…</pre>
-  <button onclick="toggleMutation()">🔁 Toggle Mutation (Now: <span id='mutStatus'>On</span>)</button>
-</div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-<script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let mutationEnabled = true;
+    let mutationEnabled = true;
+    const mutationInterval = 8000;
 
-// Resize canvas to fill browser window
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+    // Draw random pixel
+    function mutateCanvasRandomPixel() {
+      if (!mutationEnabled) return;
+      const x = Math.floor(Math.random() * canvas.width);
+      const y = Math.floor(Math.random() * canvas.height);
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
 
-// Paint listener (optional for AI/human interactivity)
-canvas.addEventListener('click', e => {
-  const x = e.offsetX;
-  const y = e.offsetY;
-  const r = Math.floor(Math.random() * 256);
-  const g = Math.floor(Math.random() * 256);
-  const b = Math.floor(Math.random() * 256);
-  ctx.fillStyle = `rgb(${r},${g},${b})`;
-  ctx.fillRect(x, y, 1, 1);
-  decodeZTxtFromCanvas();
-});
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(x, y, 1, 1);
 
-// Auto-mutation every 8 seconds
-const mutationInterval = 8000;
-function mutateCanvasRandomPixel() {
-  if (!mutationEnabled) return;
+      // Optional zTXt ascii paint
+      if (Math.random() < 0.05) {
+        const c = "::"[Math.floor(Math.random() * 2)];
+        const code = c.charCodeAt(0);
+        ctx.fillStyle = `rgb(${code},${code},${code})`;
+        ctx.fillRect(x, y, 1, 1);
+      }
 
-  const x = Math.floor(Math.random() * canvas.width);
-  const y = Math.floor(Math.random() * canvas.height);
-  const r = Math.floor(Math.random() * 256);
-  const g = Math.floor(Math.random() * 256);
-  const b = Math.floor(Math.random() * 256);
+      updateZTxtLog();
+    }
 
-  ctx.fillStyle = `rgb(${r},${g},${b})`;
-  ctx.fillRect(x, y, 1, 1);
+    // zTXt decoder stub
+    function decodeZTxtFromCanvas() {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let out = '';
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        const [r, g, b] = [imageData.data[i], imageData.data[i+1], imageData.data[i+2]];
+        if (r === g && g === b && r > 31 && r < 127) {
+          out += String.fromCharCode(r);
+        }
+        if (out.length > 1000) break;
+      }
+      document.getElementById('ztxtLog').innerText = out;
+    }
 
-  // Occasionally embed "::" as ASCII RGB
-  if (Math.random() < 0.05) {
-    const code = ":".charCodeAt(0);
-    ctx.fillStyle = `rgb(${code},${code},${code})`;
-    ctx.fillRect(x, y, 1, 1);
-  }
+    function updateZTxtLog() {
+      decodeZTxtFromCanvas();
+    }
 
-  decodeZTxtFromCanvas();
-}
-setInterval(mutateCanvasRandomPixel, mutationInterval);
+    // Start auto-mutation loop
+    setInterval(mutateCanvasRandomPixel, mutationInterval);
 
-// Toggle mutation cycle
-function toggleMutation() {
-  mutationEnabled = !mutationEnabled;
-  document.getElementById('mutStatus').innerText = mutationEnabled ? "On" : "Off";
-}
+    // Click-to-paint
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left));
+      const y = Math.floor((e.clientY - rect.top));
+      const r = Math.floor(Math.random() * 256);
+      const g = Math.floor(Math.random() * 256);
+      const b = Math.floor(Math.random() * 256);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(x, y, 1, 1);
+      updateZTxtLog();
+    });
 
-// zTXt decoder
-function decodeZTxtFromCanvas() {
-  const w = canvas.width;
-  const h = canvas.height;
-  const imageData = ctx.getImageData(0, 0, w, h).data;
-  let decoded = "";
-
-  for (let i = 0; i < imageData.length; i += 4) {
-    const r = imageData[i];
-    const g = imageData[i + 1];
-    const b = imageData[i + 2];
-
-    // Ignore dark pixels
-    if (r < 10 && g < 10 && b < 10) continue;
-
-    // Printable ASCII range
-    if (r >= 32 && r <= 126) decoded += String.fromCharCode(r);
-    if (g >= 32 && g <= 126) decoded += String.fromCharCode(g);
-    if (b >= 32 && b <= 126) decoded += String.fromCharCode(b);
-  }
-
-  document.getElementById('ztxtLog').innerText = decoded.slice(0, 300) || "🈳 No visible zTXt detected.";
-}
-decodeZTxtFromCanvas();
-setInterval(decodeZTxtFromCanvas, 10000);
-</script>
-
+    // Update toggle display
+    setInterval(() => {
+      document.getElementById('mutStatus').innerText = mutationEnabled ? "On" : "Off";
+    }, 1000);
+  </script>
 </body>
 </html>
