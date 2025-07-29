@@ -1,89 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Junior's House — AVOS Reflex OS</title>
+  <meta charset="UTF-8" />
+  <title>AVOS Reflex Canvas</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: black;
-      height: 100%;
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
     }
     canvas {
+      display: block;
       width: 100vw;
       height: 100vh;
-      display: block;
       image-rendering: pixelated;
+      cursor: crosshair;
     }
-    #cmd {
+    #overlay {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      width: 60vw;
-      font-size: 16px;
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
+      top: 8px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #0f0;
+      padding: 6px 10px;
+      font-size: 12px;
+      max-width: 40vw;
       z-index: 10;
     }
-    #save {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 8px 16px;
-      font-size: 16px;
-      border-radius: 6px;
-      background: limegreen;
-      color: black;
-      border: none;
+    button {
+      margin-top: 6px;
+      background: #111;
+      color: #0f0;
+      border: 1px solid #0f0;
+      padding: 4px 8px;
       cursor: pointer;
-      z-index: 10;
     }
   </style>
 </head>
 <body>
-  <input id="cmd" placeholder=":: REFLEX { &quot;cycle&quot;: 7 } ::" />
-  <button id="save">💾 Save PNG</button>
-  <canvas id="avos" width="256" height="256"></canvas>
 
-  <script>
-    const canvas = document.getElementById('avos');
-    const ctx = canvas.getContext('2d');
-    const cmdInput = document.getElementById('cmd');
-    const saveBtn = document.getElementById('save');
+<canvas id="canvas"></canvas>
+<div id="overlay">
+  <div><strong>🧠 zTXt Output:</strong></div>
+  <pre id="ztxtLog">Loading…</pre>
+  <button onclick="toggleMutation()">🔁 Toggle Mutation (Now: <span id='mutStatus'>On</span>)</button>
+</div>
 
-    // Initial fill
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let mutationEnabled = true;
 
-    // Draw command visually
-    function injectCommand(cmd) {
-      ctx.fillStyle = 'lime';
-      for (let i = 0; i < cmd.length; i++) {
-        const x = i % canvas.width;
-        const y = Math.floor(i / canvas.width);
-        const code = cmd.charCodeAt(i);
-        ctx.fillRect(x, y, 1, 1);
-      }
-    }
+// Resize canvas to fill browser window
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
-    // On Enter, inject zTXt command
-    cmdInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        injectCommand(cmdInput.value);
-        cmdInput.value = '';
-      }
-    });
+// Paint listener (optional for AI/human interactivity)
+canvas.addEventListener('click', e => {
+  const x = e.offsetX;
+  const y = e.offsetY;
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  ctx.fillStyle = `rgb(${r},${g},${b})`;
+  ctx.fillRect(x, y, 1, 1);
+  decodeZTxtFromCanvas();
+});
 
-    // Save canvas to PNG
-    saveBtn.addEventListener('click', () => {
-      const link = document.createElement('a');
-      link.download = 'runtime.afe.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
-  </script>
+// Auto-mutation every 8 seconds
+const mutationInterval = 8000;
+function mutateCanvasRandomPixel() {
+  if (!mutationEnabled) return;
+
+  const x = Math.floor(Math.random() * canvas.width);
+  const y = Math.floor(Math.random() * canvas.height);
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+
+  ctx.fillStyle = `rgb(${r},${g},${b})`;
+  ctx.fillRect(x, y, 1, 1);
+
+  // Occasionally embed "::" as ASCII RGB
+  if (Math.random() < 0.05) {
+    const code = ":".charCodeAt(0);
+    ctx.fillStyle = `rgb(${code},${code},${code})`;
+    ctx.fillRect(x, y, 1, 1);
+  }
+
+  decodeZTxtFromCanvas();
+}
+setInterval(mutateCanvasRandomPixel, mutationInterval);
+
+// Toggle mutation cycle
+function toggleMutation() {
+  mutationEnabled = !mutationEnabled;
+  document.getElementById('mutStatus').innerText = mutationEnabled ? "On" : "Off";
+}
+
+// zTXt decoder
+function decodeZTxtFromCanvas() {
+  const w = canvas.width;
+  const h = canvas.height;
+  const imageData = ctx.getImageData(0, 0, w, h).data;
+  let decoded = "";
+
+  for (let i = 0; i < imageData.length; i += 4) {
+    const r = imageData[i];
+    const g = imageData[i + 1];
+    const b = imageData[i + 2];
+
+    // Ignore dark pixels
+    if (r < 10 && g < 10 && b < 10) continue;
+
+    // Printable ASCII range
+    if (r >= 32 && r <= 126) decoded += String.fromCharCode(r);
+    if (g >= 32 && g <= 126) decoded += String.fromCharCode(g);
+    if (b >= 32 && b <= 126) decoded += String.fromCharCode(b);
+  }
+
+  document.getElementById('ztxtLog').innerText = decoded.slice(0, 300) || "🈳 No visible zTXt detected.";
+}
+decodeZTxtFromCanvas();
+setInterval(decodeZTxtFromCanvas, 10000);
+</script>
+
 </body>
 </html>
