@@ -1,64 +1,46 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PXNet Agent Viewer</title>
+  <meta charset="UTF-8" />
+  <title>Junior's House — Live OS</title>
   <style>
-    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
-    #log { white-space: pre; background: #000; padding: 10px; border: 1px solid #0f0; margin-top: 10px; }
-    #afe-img { max-width: 512px; border: 1px solid #0f0; }
-    .flex { display: flex; gap: 20px; flex-wrap: wrap; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      image-rendering: pixelated;
+    }
   </style>
 </head>
 <body>
-  <h1>PXNet Agent Viewer</h1>
-  <div class="flex">
-    <div>
-      <h3>🖼️ Current AVOS Runtime</h3>
-      <img id="afe-img" src="runtime.afe.png?cachebust=">
-      <br><button onclick="refreshImage()">🔄 Refresh Image</button>
-    </div>
-    <div>
-      <h3>📜 zTXt Metadata Log</h3>
-      <div id="log">Loading...</div>
-      <br><button onclick="fetchMetadata()">🔍 Fetch Metadata</button>
-    </div>
-  </div>
+  <canvas id="pxCanvas"></canvas>
 
-<script>
-  const imgEl = document.getElementById('afe-img');
-  const logEl = document.getElementById('log');
+  <script>
+    const canvas = document.getElementById('pxCanvas');
+    const ctx = canvas.getContext('2d');
 
-  function refreshImage() {
-    const t = Date.now();
-    imgEl.src = 'runtime.afe.png?cachebust=' + t;
-  }
-
-  async function fetchMetadata() {
-    logEl.innerText = "[⏳] Extracting metadata...";
-    try {
-      const response = await fetch('runtime.afe.png');
-      const blob = await response.blob();
-      const arrayBuffer = await blob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-
-      // Scan for zTXt chunk
-      const decoder = new TextDecoder();
-      let textLog = "";
-      for (let i = 0; i < bytes.length - 4; i++) {
-        const slice = decoder.decode(bytes.slice(i, i + 4));
-        if (slice === 'zTXt') {
-          const found = decoder.decode(bytes.slice(i, i + 200));
-          textLog += found + "\n\n";
-        }
-      }
-      logEl.innerText = textLog || "[⚠️] No zTXt found.";
-    } catch (err) {
-      logEl.innerText = "[❌] Failed to fetch metadata: " + err;
+    function loadAndDrawImage() {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = 'runtime.afe.png?cb=' + Date.now(); // prevent caching
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
     }
-  }
 
-  fetchMetadata();
-</script>
+    loadAndDrawImage();
+    setInterval(loadAndDrawImage, 10000); // Refresh every 10s
+  </script>
 </body>
 </html>
