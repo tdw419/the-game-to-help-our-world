@@ -35,6 +35,18 @@
     }
   </style>
 </head>
+  <script src="avos_reflex_agent.js"></script>
+<script>
+  window.onload = () => {
+    new AVOSReflexAgent({
+      canvasId: "juniorCanvas",
+      agentId: "GPT",
+      signatureColor: [0, 128, 255], // Blue border for GPT
+      autoMutate: true,
+      autoHandshake: true
+    });
+  };
+</script>
 <body>
   <canvas id="canvas"></canvas>
   <div id="controls">
