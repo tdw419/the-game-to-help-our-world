@@ -2,63 +2,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PXNet Agent Viewer</title>
+  <title>Junior's House – AVOS Runtime Viewer</title>
   <style>
     body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
     #log { white-space: pre; background: #000; padding: 10px; border: 1px solid #0f0; margin-top: 10px; }
-    #afe-img { max-width: 512px; border: 1px solid #0f0; }
-    .flex { display: flex; gap: 20px; flex-wrap: wrap; }
+    #afe-img { max-width: 90vw; border: 2px solid #0f0; margin-bottom: 10px; }
+    button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 5px 10px; cursor: pointer; }
+    h1 { color: #0f0; }
+    .flex { display: flex; flex-wrap: wrap; gap: 20px; }
+    .block { flex: 1 1 300px; }
   </style>
 </head>
 <body>
-  <h1>PXNet Agent Viewer</h1>
+  <h1>👁️ Junior's House — Live AVOS Runtime Viewer</h1>
+
   <div class="flex">
-    <div>
-      <h3>🖼️ Current AVOS Runtime</h3>
-      <img id="afe-img" src="runtime.afe.png?cachebust=">
+    <div class="block">
+      <h3>🖼️ AVOS Substrate</h3>
+      <img id="afe-img" src="runtime.afe.png?cb=1" alt="runtime.afe.png">
       <br><button onclick="refreshImage()">🔄 Refresh Image</button>
     </div>
-    <div>
-      <h3>📜 zTXt Metadata Log</h3>
-      <div id="log">Loading...</div>
+
+    <div class="block">
+      <h3>🧠 zTXt Metadata Log</h3>
+      <div id="log">Loading metadata...</div>
       <br><button onclick="fetchMetadata()">🔍 Fetch Metadata</button>
     </div>
   </div>
 
-<script>
-  const imgEl = document.getElementById('afe-img');
-  const logEl = document.getElementById('log');
+  <script>
+    const imgEl = document.getElementById('afe-img');
+    const logEl = document.getElementById('log');
 
-  function refreshImage() {
-    const t = Date.now();
-    imgEl.src = 'runtime.afe.png?cachebust=' + t;
-  }
-
-  async function fetchMetadata() {
-    logEl.innerText = "[⏳] Extracting metadata...";
-    try {
-      const response = await fetch('runtime.afe.png');
-      const blob = await response.blob();
-      const arrayBuffer = await blob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-
-      // Scan for zTXt chunk
-      const decoder = new TextDecoder();
-      let textLog = "";
-      for (let i = 0; i < bytes.length - 4; i++) {
-        const slice = decoder.decode(bytes.slice(i, i + 4));
-        if (slice === 'zTXt') {
-          const found = decoder.decode(bytes.slice(i, i + 200));
-          textLog += found + "\n\n";
-        }
-      }
-      logEl.innerText = textLog || "[⚠️] No zTXt found.";
-    } catch (err) {
-      logEl.innerText = "[❌] Failed to fetch metadata: " + err;
+    function refreshImage() {
+      const t = Date.now();
+      imgEl.src = 'runtime.afe.png?cb=' + t;
     }
-  }
 
-  fetchMetadata();
-</script>
+    async function fetchMetadata() {
+      logEl.innerText = "[⏳] Extracting zTXt metadata...";
+      try {
+        const response = await fetch('runtime.afe.png');
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+
+        const decoder = new TextDecoder();
+        let textLog = "";
+        for (let i = 0; i < bytes.length - 4; i++) {
+          const slice = decoder.decode(bytes.slice(i, i + 4));
+          if (slice === 'zTXt') {
+            const found = decoder.decode(bytes.slice(i, i + 256));
+            textLog += found + "\n\n";
+          }
+        }
+        logEl.innerText = textLog || "[⚠️] No zTXt metadata found.";
+      } catch (err) {
+        logEl.innerText = "[❌] Failed to fetch metadata: " + err;
+      }
+    }
+
+    fetchMetadata();
+  </script>
 </body>
 </html>
