@@ -1,5 +1,0 @@
-SET_PX 0x7000 0xFF     ; Update pxexecutor.pxmod
-PX_WRITE 0x9000 "Upgraded"
-LOG "pxexecutor updated"
-PX_EXEC 0xA000         ; Trigger PX_EXPORT
-HALT

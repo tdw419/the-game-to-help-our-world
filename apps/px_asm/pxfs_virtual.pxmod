@@ -1,3 +1,0 @@
-SET_PX 0xB000 0x01     ; Mount /pxmodules/
-PX_WRITE 0xC000 "Modules Loaded"
-HALT

@@ -1,3 +1,0 @@
-# Co-Design Logbook – Phase XI
-
-Transcript and notes from AI-human feedback rounds...

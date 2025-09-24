@@ -1,3 +1,0 @@
-# Mission Plan – Phase X
-
-Objectives, responsibilities, and expected outcomes for Phase X...

@@ -1,3 +1,0 @@
-# Anomaly Escalation Handshake
-
-Used to alert Guardians when critical deviation is detected.

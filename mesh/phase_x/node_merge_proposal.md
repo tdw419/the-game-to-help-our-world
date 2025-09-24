@@ -1,3 +1,0 @@
-# Node Merge Proposal – Phase X
-
-Proposal for merging redundant or overlapping nodes...

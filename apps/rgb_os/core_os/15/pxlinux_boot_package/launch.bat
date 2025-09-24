@@ -1,3 +1,0 @@
-@echo off
-echo Launching PXLinux...
-start pxscreenvm.exe

@@ -1,3 +1,0 @@
-# Recovery Manifest – Phase X
-
-All recovery and resilience tasks defined for Phase X...

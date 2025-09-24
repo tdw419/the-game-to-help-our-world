@@ -1,3 +1,0 @@
-# Mission Plan – Phase XI
-
-Deploy observer triangulation and launch AI-human co-design workshop...

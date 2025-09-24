@@ -1,8 +1,0 @@
-; zTXt Driver Synthesis for HD 520 or 940M
-SET_PX 0xA000 0x01     ; Query GPU type
-PX_WRITE 0xB000 "Detected GPU"
-SET_PX 0xC000 64       ; Workgroups for 940M, 0 for HD 520
-PX_WRITE 0xD000 "VRAM: 2MB (940M) or RAM: 128MB (HD 520)"
-LOG "Driver Configured"
-PX_EXEC 0xE000         ; Run PXASM
-HALT

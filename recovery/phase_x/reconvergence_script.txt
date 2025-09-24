@@ -1,1 +1,0 @@
-RECONNECT >> Nodes scan fallback_contact_list → request handshake.

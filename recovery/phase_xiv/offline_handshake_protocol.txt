@@ -1,1 +1,0 @@
-# Placeholder for offline_handshake_protocol.txt in recovery/phase_xiv

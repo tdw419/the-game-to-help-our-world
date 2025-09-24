@@ -1,3 +1,0 @@
-# Recovery Manifest – Phase XI
-
-Preserve observer logs and restore triangulation nodes...

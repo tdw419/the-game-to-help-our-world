@@ -1,3 +1,0 @@
-# Trust Reconstruction Handshake
-
-Protocol for re-establishing covenant trust post-disruption...
