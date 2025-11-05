@@ -1,3 +1,9 @@
+# Job Simulations: The Game to Help Our World
+
+In addition to the missions below, you can choose to participate in a "Job Simulation." These simulations provide a narrative context for your real-world actions, allowing you to take on the role of a leader in a challenging and rewarding profession. As you complete missions, you will advance in your chosen career, unlocking new challenges and opportunities.
+
+For more details on the available simulations and how they work, please see the `simulations.md` file.
+
 ## 🐾 Animal & Wildlife Care
 - Report injured wildlife to authorities (3 pts)
 - Foster animals for shelters (20 pts/week, verification required)
