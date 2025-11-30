@@ -1,0 +1,14 @@
+import openai
+
+openai.api_key = 'your-openai-api-key'
+
+@app.post("/llm/generate")
+async def generate_text(prompt: str, token: str = Depends(lambda request: request.headers.get("Authorization"))):
+    if not token or not token.startswith("token_"):
+        raise HTTPException(status_code=401, detail="Invalid token")
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=prompt,
+        max_tokens=50
+    )
+    return {"generated_text": response.choices[0].text.strip()}
